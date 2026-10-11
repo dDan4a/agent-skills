@@ -91,6 +91,10 @@ remote branch is not touched; delete it when merging (the forge's option).
 - `wt clean [path]`, `wt clean --all [group]`: the same check for one or all.
 - `wt list`: every open task worktree and its uncommitted file count.
 
+Inside Herdr, `wt new` also opens a workspace for the repo's main checkout.
+Once the repo's last task worktree is removed, `wt` closes that workspace too,
+unless it holds an agent or a running command, or is the caller's own.
+
 Agents without a session-end hook: run `wt sync` when the user asks to tidy
 up, or at the start of a session.
 
@@ -98,5 +102,5 @@ up, or at the start of a session.
 
 Use a throwaway `WT_ROOT` (a bare `origin` plus a clone) and run `wt` with
 `env -u HERDR_ENV`. Inside Herdr, `wt new` opens a Herdr workspace for every
-test repo, and those workspaces stay after the test. To test the Herdr path
+test repo, and an interrupted test leaves them open. To test the Herdr path
 itself, use a separate Herdr session (`herdr --session`) and stop it afterwards.

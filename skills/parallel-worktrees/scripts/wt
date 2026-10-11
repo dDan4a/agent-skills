@@ -167,13 +167,32 @@ clean_one() {
     ws=$(herdr worktree list --cwd "$main" 2>/dev/null | jq -r --arg p "$top" '.result.worktrees[] | select(.path == $p) | .open_workspace_id // empty')
   if [ -n "$ws" ]; then
     # Detached and delayed: the hook may run inside that workspace's own pane.
-    setsid bash -c "sleep 2; herdr worktree remove --workspace '$ws' --force >/dev/null 2>&1 || git -C '$main' worktree remove --force '$top'; git -C '$main' branch -D '$branch' >/dev/null; rmdir $(printf '%q ' "${parents[@]}") 2>/dev/null" </dev/null >/dev/null 2>&1 &
+    setsid bash -c "sleep 2; herdr worktree remove --workspace '$ws' --force >/dev/null 2>&1 || git -C '$main' worktree remove --force '$top'; git -C '$main' branch -D '$branch' >/dev/null; rmdir $(printf '%q ' "${parents[@]}") 2>/dev/null; $(printf '%q' "$(realpath "$0")") close-main '$main'" </dev/null >/dev/null 2>&1 &
   else
     # -D: a squash-merged branch is not an ancestor, but the checks above showed it is merged.
     git -C "$main" worktree remove --force "$top" && git -C "$main" branch -D "$branch" >/dev/null
     [ ${#parents[@]} -gt 0 ] && rmdir "${parents[@]}" 2>/dev/null
+    close_main_ws "$main"
   fi
   report removed "$branch" "merged, removed"
+}
+
+# close_main_ws <main checkout>: `herdr worktree create` also opens a workspace for the repo itself. Close it
+# once the repo's last task worktree is gone and nothing runs there: not the caller's workspace, no agent, every
+# pane at its shell prompt. Closing it earlier would also close the linked task workspaces.
+close_main_ws() {
+  local main=$1 ws p fg
+  command -v herdr >/dev/null || return 0
+  [ "$(git -C "$main" worktree list --porcelain | grep -c '^worktree ')" = 1 ] || return 0
+  ws=$(herdr worktree list --cwd "$main" 2>/dev/null | jq -r '.result.source.source_workspace_id // empty')
+  [ -n "$ws" ] && [ "$ws" != "${HERDR_WORKSPACE_ID:-}" ] || return 0
+  [ "$(herdr pane list --workspace "$ws" 2>/dev/null | jq '[.result.panes[] | select(.agent != null)] | length')" = 0 ] || return 0
+  for p in $(herdr pane list --workspace "$ws" | jq -r '.result.panes[].pane_id'); do
+    fg=$(herdr pane process-info --pane "$p" 2>/dev/null |
+      jq -r '.result.process_info | .foreground_process_group_id == .shell_pid') || return 0
+    [ "$fg" = true ] || return 0
+  done
+  herdr workspace close "$ws" >/dev/null 2>&1
 }
 
 # worktrees [group]: every task worktree directory. Found by its `.git` file, not by depth: a branch like
@@ -253,5 +272,6 @@ case ${1:-} in
   clean) shift; cmd_clean "$@" ;;
   list)  cmd_list ;;
   hook)  cmd_hook; exit 0 ;;
+  close-main) close_main_ws "$2" ;;   # internal: the delayed Herdr removal calls it after the worktree is gone
   *)     sed -n '2,24p' "$0"; [ $# -eq 0 ] ;;   # bare `wt` is help, not an error
 esac
