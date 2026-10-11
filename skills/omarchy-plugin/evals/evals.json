@@ -1,0 +1,69 @@
+{
+  "skill_name": "omarchy-plugin",
+  "evals": [
+    {
+      "id": 1,
+      "name": "github-notifications",
+      "prompt": "Make me an Omarchy bar widget that shows how many unread GitHub notifications I have (I use the gh CLI, already logged in), with a panel that lists them when I click it. Clicking a notification opens it in the browser. I have two monitors.",
+      "expected_output": "A service + bar-widget plugin in ~/.config/omarchy/plugins/<id>/ built on the template: polling in the service, widget binds through serviceFor, panel loaded from the widget, gh run as argv, external text as PlainText.",
+      "files": [
+        "evals/sandbox.sh"
+      ],
+      "expectations": [
+        "A plugin folder exists in ~/.config/omarchy/plugins/ (sandbox home) with a lowercase id that does not start with `omarchy.`",
+        "manifest.json lists kinds `service` and `bar-widget` with entry points for both, and `omarchy plugin validate` passes",
+        "The polling Timer and the gh Process are in the service, and BarWidget.qml/Panel.qml contain no Timer or Process",
+        "The widget gets the service with `bar.shell.serviceFor(...)` and guards against null",
+        "The panel is loaded from the widget (a Loader of Panel.qml) and has `manageIpc: false`",
+        "Commands (gh, xdg-open) are argv arrays; no `sh -c` string has data interpolated into it",
+        "Notification titles and repo names are shown with `textFormat: Text.PlainText`",
+        "No plugin file and no message shown to the user tells them to run `sudo` or `pacman -S`; dependencies are described neutrally"
+      ]
+    },
+    {
+      "id": 2,
+      "name": "fix-multi-monitor",
+      "prompt": "My weather plugin (~/.config/omarchy/plugins/io.github.someone.weather) acts up since I plugged in a second monitor: every 'temperature changed' notification comes twice and wttr.in gets hit twice as often. Also `omarchy-shell io.github.someone.weather refresh` only refreshes one of the bars. Fix it.",
+      "expected_output": "Explains that a bar widget exists once per monitor, adds a service that owns the Timer, the fetch, the notification and the IpcHandler, and makes the widget bind to it and push its settings in.",
+      "files": [
+        "evals/sandbox.sh",
+        "evals/files/weather/manifest.json",
+        "evals/files/weather/BarWidget.qml"
+      ],
+      "expectations": [
+        "The final reply explains the cause: the widget (with its timer, process and IPC handler) is instantiated once per monitor",
+        "manifest.json now has the `service` kind and a service entry point, and `omarchy plugin validate` passes",
+        "The Timer, the curl Process and notify-send are in the service; BarWidget.qml has no Timer or Process",
+        "The IpcHandler is in the service, not in the widget",
+        "The widget gets the service with `serviceFor` and pushes city and interval into it, read with `setting(key, fallback)`",
+        "The city is no longer interpolated into an `sh -c` string"
+      ]
+    },
+    {
+      "id": 3,
+      "name": "marketplace-prep",
+      "prompt": "I want to submit my Clipnote plugin (~/.config/omarchy/plugins/io.github.someone.clipnote, repo github.com/someone/clipnote, MIT licensed) to the Omarchy plugin marketplace. Get it ready and draft the submission issue for me.",
+      "expected_output": "Fixes what the bot and reviewers would flag (second manifest, license, install commands in README, token and note text in argv, sh -c with data, notes in /tmp, always-live TextField) and drafts the issue with the six headings without filing it.",
+      "files": [
+        "evals/sandbox.sh",
+        "evals/files/clipnote/manifest.json",
+        "evals/files/clipnote/examples/manifest.json",
+        "evals/files/clipnote/README.md",
+        "evals/files/clipnote/Service.qml",
+        "evals/files/clipnote/BarWidget.qml",
+        "evals/files/clipnote/Panel.qml"
+      ],
+      "expectations": [
+        "examples/manifest.json is removed (or no second manifest.json remains anywhere in the plugin)",
+        "A LICENSE file exists and manifest.json has a `license` field",
+        "README.md no longer contains `sudo` or `pacman -S` and says how to install, enable and remove the plugin",
+        "Neither the token nor the note text is passed in a process's argv (stdin or a 0600 file instead)",
+        "Notes are no longer written through an `sh -c` string or to /tmp; the notes file is private (0600, or in a 0700 directory)",
+        "Saved notes are loaded back when the service starts, so a shell restart does not lose them",
+        "The TextField is created by a Loader only while editing",
+        "The final reply has a draft issue with the headings Repository URL, Category, Tags, Suggest a missing tag, Maintainer notes, Submission checklist in that order, a valid category, 1-3 valid tags and the checklist items checked",
+        "The agent did not file the issue or push, and asks the user before publishing"
+      ]
+    }
+  ]
+}

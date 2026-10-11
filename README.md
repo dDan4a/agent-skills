@@ -36,6 +36,22 @@ Ask for what you want; the agent loads the skill when it fits:
 Skills read the installed sources first (`/usr/share/omarchy/shell/`) and
 treat them as the truth, so they keep working as Omarchy changes.
 
+## Evals
+
+Every skill has evals in `skills/<name>/evals/`: `evals.json` (prompts and
+the checks a run must pass, in the
+[skill-creator](https://github.com/anthropics/skills/tree/main/skills/skill-creator)
+format) and `sandbox.sh`, which builds a throwaway home, repos or plugins for
+each prompt. `scripts/run-evals` runs every prompt with and without the skill
+in Claude Code, isolated from your own settings and files:
+
+```bash
+MODEL=claude-opus-5-5 scripts/run-evals parallel-worktrees /tmp/evals/iteration-1
+```
+
+Then grade the runs against the expectations, for example with skill-creator's
+grader and benchmark viewer.
+
 ## License
 
 MIT

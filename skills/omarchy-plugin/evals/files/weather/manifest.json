@@ -1,0 +1,21 @@
+{
+  "schemaVersion": 1,
+  "id": "io.github.someone.weather",
+  "name": "Weather",
+  "version": "0.2.0",
+  "author": "someone",
+  "license": "MIT",
+  "description": "Current temperature in the bar, with a notification when it changes a lot.",
+  "kinds": ["bar-widget"],
+  "entryPoints": { "barWidget": "BarWidget.qml" },
+  "barWidget": {
+    "displayName": "Weather",
+    "category": "Desktop",
+    "defaultSection": "right",
+    "defaults": { "city": "Berlin", "intervalMin": 10 },
+    "schema": [
+      { "key": "city", "type": "string", "label": "City", "defaultValue": "Berlin" },
+      { "key": "intervalMin", "type": "integer", "label": "Refresh every (minutes)", "min": 1, "max": 120, "defaultValue": 10 }
+    ]
+  }
+}

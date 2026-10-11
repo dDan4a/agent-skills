@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "id": "io.github.someone.clipnote",
+  "name": "Clipnote",
+  "version": "0.1.0",
+  "author": "someone",
+  "description": "Quick notes from the bar, synced to your Notehub account.",
+  "kinds": ["service", "bar-widget"],
+  "entryPoints": { "service": "Service.qml", "barWidget": "BarWidget.qml" },
+  "barWidget": {
+    "displayName": "Clipnote",
+    "category": "Productivity",
+    "defaultSection": "right",
+    "defaults": { "token": "" },
+    "schema": [ { "key": "token", "type": "string", "label": "Notehub API token", "defaultValue": "" } ]
+  }
+}

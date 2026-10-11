@@ -101,7 +101,9 @@ destroyed at any time. A service is created once for the whole shell.
 - **Private data never goes in argv.** Command lines are readable by every
   local user (`/proc/<pid>/cmdline`). Prompts, diffs, notes, tokens, message
   text, notification bodies with personal content: send them on stdin or in a
-  0600 file. This is the review finding raised most often.
+  0600 file. This is the review finding raised most often. With curl, send
+  user text as `--data-binary @-` on stdin or `data-raw` in a `-K` config:
+  `-d`/`data` read a value starting with `@` as a file name to upload.
 - **Files: state dirs 0700, files 0600.** Atomic temp-and-rename writes must
   keep the destination's mode, not widen it to 0644. Keep private files out of
   shared `/tmp`; use `$XDG_RUNTIME_DIR` or `~/.local/state/<id>/`.
@@ -116,7 +118,10 @@ destroyed at any time. A service is created once for the whole shell.
   the clipboard on every clipboard change to know whether it could paste,
   even while hidden; a clipboard owner that streams forever can stall the
   whole shell. Create it with a `Loader { active: editing }` and reach it as
-  `loader.item`. Reviewers flag always-instantiated fields.
+  `loader.item`, where `editing` turns on when the user starts a note (a
+  click, a key) and off on Enter or Escape. `active: panel.opened` is not
+  enough: a panel left open keeps a live field. Reviewers flag
+  always-instantiated fields.
 - **Keyboard:** `KeyboardPanel` needs a `focusTarget`. `PanelKeyCatcher`
   sees keys before children, so set `blocked: loader.item !== null &&
   loader.item.activeFocus` while an inline `TextField` is focused, or h/j/k/l,
@@ -126,9 +131,16 @@ destroyed at any time. A service is created once for the whole shell.
   changes will not apply.
 - **Destructive actions take two clicks** (arm, then confirm within a few
   seconds) or a `ConfirmDialog`.
-- **A missing helper binary** (`command -v` fails) should show an install hint
-  in the panel, not an endless error. Run it through `sh -c 'command -v "$0"
-  || exit 127; exec "$0" ...'` to tell "missing" (exit 127) from "failed".
+- **A missing helper binary** (`command -v` fails) should show which package
+  is missing in the panel ("needs github-cli"), not an endless error and not
+  an install command: `sudo`, `pacman -S` and the like in any scanned file,
+  QML strings included, flag the plugin in the marketplace scan. Run it
+  through `sh -c 'command -v "$0" || exit 127; exec "$0" ...'` to tell
+  "missing" (exit 127) from "failed".
+- **Saved state is loaded on start.** A service that writes a file (notes,
+  history, a cache) reads it back when it is created, before its first
+  write; otherwise the first save after `omarchy restart shell` overwrites
+  everything saved before.
 
 ## References
 
