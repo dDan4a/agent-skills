@@ -18,7 +18,8 @@ Repos go to `$WT_ROOT/<group>/<repo>`; a group with a single repo is fine.
 
 ## Claude Code hook
 
-`~/.claude/settings.json`, so a finished session removes its merged worktree:
+`~/.claude/settings.json` (merge into an existing `hooks` object; the path is
+where you put the link), so a finished session removes its merged worktree:
 
 ```json
 "hooks": {
@@ -30,7 +31,7 @@ Repos go to `$WT_ROOT/<group>/<repo>`; a group with a single repo is fine.
 
 Hooks may not see `WT_ROOT` from your shell rc: if it is not `~/projects`,
 write `WT_ROOT=$HOME/code $HOME/.local/bin/wt hook`. The hook reads the
-session's `cwd` from stdin and exits 0 whatever happens.
+`cwd` field of the hook's JSON on stdin and exits 0 whatever happens.
 
 Other agents (Codex, Gemini CLI, …) have no session-end event at the time of
 writing. Run `wt sync` by hand, or from a session-start hook if the agent has

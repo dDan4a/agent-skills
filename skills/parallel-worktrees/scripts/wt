@@ -110,7 +110,7 @@ report() {
     printf '  %s %-45s %s\n' "$mark" "$2" "$3"
   else
     case $1 in
-      removed) notify "$2 merged, worktree removed" "$3" ;;
+      removed) notify "$2 merged, worktree removed" ;;
       skipped) notify "$2 merged but has uncommitted changes" "$3: kept" ;;
     esac
   fi
@@ -253,5 +253,5 @@ case ${1:-} in
   clean) shift; cmd_clean "$@" ;;
   list)  cmd_list ;;
   hook)  cmd_hook; exit 0 ;;
-  *)     sed -n '2,24p' "$0"; exit 1 ;;
+  *)     sed -n '2,24p' "$0"; [ $# -eq 0 ] ;;   # bare `wt` is help, not an error
 esac

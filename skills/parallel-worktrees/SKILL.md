@@ -28,8 +28,8 @@ $WT_ROOT/                       # default ~/projects
 
 - **One task = one branch = one worktree = one session.** Two sessions never
   work in the same checkout.
-- **The main checkout stays on its default branch.** Read, merge and release
-  from it; do task work in a worktree.
+- **The main checkout stays on its default branch.** Read from it, merge or
+  release there when the user asks; do task work in a worktree.
 - **Start a task with `wt new`**, not `git worktree add` or the agent's own
   worktree feature: `wt` puts the worktree where cleanup finds it and links
   the untracked files the group needs.
@@ -77,11 +77,14 @@ open a new session in the printed path, with the brief in your reply.
 A task worktree is removed, together with its local branch, when the branch
 has reached the base branch (a normal merge, or a squash merge checked with
 `git cherry`) and the worktree has no uncommitted changes. A branch with no
-commits yet is kept.
+commits yet is kept. Untracked files count as uncommitted: keep build output
+(`__pycache__`, `node_modules`, …) in `.gitignore` or the worktree stays. The
+remote branch is not touched; delete it when merging (the forge's option).
 
 - `wt hook`: the Claude Code `SessionEnd` hook. Cleans the session's own
   worktree; with `TASK_RE` set, also the same task's worktrees in the
-  group's other repos. Does nothing outside `.worktrees`.
+  group's other repos. Does nothing outside `.worktrees` and does not update
+  the main checkout: `wt sync` does.
 - `wt sync [group] [--dry-run]`: per repo, fetch, fast-forward the local
   default branch, prune stale worktrees, remove merged ones and report on the
   rest (`✔` removed, `⚠` merged but dirty, `•` kept and why).
