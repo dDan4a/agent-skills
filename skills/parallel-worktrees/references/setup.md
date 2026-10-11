@@ -33,6 +33,13 @@ Hooks may not see `WT_ROOT` from your shell rc: if it is not `~/projects`,
 write `WT_ROOT=$HOME/code $HOME/.local/bin/wt hook`. The hook reads the
 `cwd` field of the hook's JSON on stdin and exits 0 whatever happens.
 
+Then run the exact command you configured, the way Claude Code will, to catch a
+wrong path or a missing `WT_ROOT`. Outside a task worktree it changes nothing:
+
+```bash
+echo '{"cwd":"'"$PWD"'"}' | WT_ROOT=$HOME/code $HOME/.local/bin/wt hook; echo "exit $?"
+```
+
 Other agents (Codex, Gemini CLI, …) have no session-end event at the time of
 writing. Run `wt sync` by hand, or from a session-start hook if the agent has
 one; a merged worktree is then removed when the next session starts.

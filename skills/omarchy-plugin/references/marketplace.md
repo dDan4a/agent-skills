@@ -20,12 +20,20 @@ submitting, since the rules change.
 1. Open an issue with the form `issues/new?template=submit-plugin.yml`. The
    body has six headings, in order: Repository URL (root URL, no trailing
    slash), Category, Tags, Suggest a missing tag, Maintainer notes,
-   Submission checklist (all five boxes checked). Unused fields:
-   `_No response_`.
+   Submission checklist. Unused fields: `_No response_`. Title:
+   `[Plugin]: <name>`. The checklist, all five checked, verbatim:
+   ```
+   - [x] The repository is public and contains installation and removal instructions.
+   - [x] I have documented the plugin license and any external dependencies.
+   - [x] I confirm that I own or have permission to submit this plugin and its preview assets.
+   - [x] The plugin does not overwrite user configuration without explicit consent.
+   - [x] I understand that approval is for listing and is not a security review.
+   ```
 2. Category, one of: Appearance, Desktop, Developer Tools, Hardware, Kids,
    Productivity, System, Widgets, Other.
-3. Tags, 1 to 3 of: ai, bar, education, games, hyprland, kids, launcher,
-   media, power-management, quickshell, security, system, vpn, workspaces.
+3. Tags, 1 to 3 of: AI, Bar, Education, Games, Hyprland, Kids, Launcher,
+   Media, Power management, Quickshell, Security, System, VPN, Workspaces
+   (comma-separated in the body, as the form writes them).
 4. Use Maintainer notes for whatever a reviewer should know: a required
    CLI, what runs when, what is written where.
 5. Agents: show the owner the full title and body and get a yes before
