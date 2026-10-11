@@ -1,0 +1,42 @@
+{
+  "schemaVersion": 1,
+  "id": "io.github.yourname.loadavg",
+  "name": "Load Average",
+  "version": "0.1.0",
+  "author": "yourname",
+  "license": "MIT",
+  "description": "System load in the bar, with a panel showing the 1, 5 and 15 minute averages.",
+  "kinds": [
+    "service",
+    "bar-widget"
+  ],
+  "entryPoints": {
+    "service": "Service.qml",
+    "barWidget": "BarWidget.qml"
+  },
+  "barWidget": {
+    "displayName": "Load Average",
+    "description": "System load, with 1/5/15 minute averages in a panel",
+    "category": "System",
+    "aliases": [
+      "load",
+      "cpu"
+    ],
+    "allowMultiple": false,
+    "defaultSection": "right",
+    "defaults": {
+      "intervalSec": 5
+    },
+    "schema": [
+      {
+        "key": "intervalSec",
+        "type": "integer",
+        "label": "Refresh every (seconds)",
+        "min": 1,
+        "max": 60,
+        "step": 1,
+        "defaultValue": 5
+      }
+    ]
+  }
+}

@@ -1,0 +1,22 @@
+{
+  "name": "dan4a-skills",
+  "owner": {
+    "name": "dDan4a",
+    "url": "https://github.com/dDan4a"
+  },
+  "metadata": {
+    "description": "Agent skills by dDan4a: Omarchy plugins and more."
+  },
+  "plugins": [
+    {
+      "name": "omarchy-plugin",
+      "source": "./",
+      "description": "Write, debug and publish Omarchy shell plugins: manifest, services, bar widgets and panels across monitors, the UI kit, IPC, and the marketplace review.",
+      "version": "0.1.0",
+      "license": "MIT",
+      "keywords": ["omarchy", "quickshell", "qml", "hyprland", "plugin"],
+      "skills": ["./skills/omarchy-plugin"],
+      "strict": false
+    }
+  ]
+}

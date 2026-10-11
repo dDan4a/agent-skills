@@ -1,0 +1,40 @@
+# agent-skills
+
+Skills for AI coding agents (Claude Code, Codex, Gemini CLI, Cursor and others
+that read [Agent Skills](https://agentskills.io)).
+
+| Skill | What it teaches |
+|---|---|
+| [`omarchy-plugin`](skills/omarchy-plugin/SKILL.md) | Writing, debugging and publishing [Omarchy](https://omarchy.org) shell plugins: the manifest, services and bar widgets that work across several monitors, panels and the UI kit, IPC, settings, and what the plugin marketplace review asks for. Comes with a working template plugin. |
+
+## Install
+
+Any agent, with the [`skills`](https://github.com/vercel-labs/skills) CLI:
+
+```bash
+npx skills add dDan4a/agent-skills                         # pick from the list
+npx skills add dDan4a/agent-skills --skill omarchy-plugin  # just this one
+```
+
+Claude Code, as a plugin marketplace:
+
+```
+/plugin marketplace add dDan4a/agent-skills
+/plugin install omarchy-plugin@dan4a-skills
+```
+
+By hand: copy `skills/<name>/` into your agent's skills directory, for
+example `~/.claude/skills/`, `~/.codex/skills/` or `~/.gemini/skills/`.
+
+## Use
+
+Ask for what you want; the agent loads the skill when it fits:
+
+> Make an Omarchy bar widget that shows my GitHub notifications, with a panel listing them.
+
+Skills read the installed sources first (`/usr/share/omarchy/shell/`) and
+treat them as the truth, so they keep working as Omarchy changes.
+
+## License
+
+MIT
