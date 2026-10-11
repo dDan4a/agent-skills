@@ -6,6 +6,7 @@ that read [Agent Skills](https://agentskills.io)).
 | Skill | What it teaches |
 |---|---|
 | [`omarchy-plugin`](skills/omarchy-plugin/SKILL.md) | Writing, debugging and publishing [Omarchy](https://omarchy.org) shell plugins: the manifest, services and bar widgets that work across several monitors, panels and the UI kit, IPC, settings, and what the plugin marketplace review asks for. Comes with a working template plugin. |
+| [`parallel-worktrees`](skills/parallel-worktrees/SKILL.md) | Running several agent sessions at once without collisions: one task = one branch = one git worktree = one session. Comes with `wt`, a script that creates task worktrees, hands a task off to a new session (in Herdr) and removes worktrees once their branch is merged, including squash merges, from a Claude Code `SessionEnd` hook. |
 
 ## Install
 
