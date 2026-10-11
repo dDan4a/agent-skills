@@ -82,11 +82,14 @@ From real reviews, most frequent first:
 3. **Side effects beyond the user's choice**: e.g. installing into a shared
    directory that other tools read when the user selected one tool.
 4. **Shell injection**: data interpolated into `bash -c` strings.
-5. **Weak local boundaries**: daemons on `0.0.0.0`/`[::]`, loopback without
+5. **Always-live text fields**: a `TextField` reads the clipboard on each
+   clipboard change even when hidden, with no size limit or deadline.
+   Instantiate it through a `Loader` only while the user types.
+6. **Weak local boundaries**: daemons on `0.0.0.0`/`[::]`, loopback without
    auth, setuid helpers.
-6. **Unpinned remote code**: `curl | sh` in scripts or the README; builds of
+7. **Unpinned remote code**: `curl | sh` in scripts or the README; builds of
    a moving branch. Pin a tag or a full SHA.
-7. Structural: a second manifest, no LICENSE, edited issue headings,
+8. Structural: a second manifest, no LICENSE, edited issue headings,
    duplicates.
 
 Reviewers also read third-party CLIs or daemons the plugin requires.
@@ -125,4 +128,5 @@ Reviewers also read third-party CLIs or daemons the plugin requires.
 - [ ] No private data in argv; files 0600 in 0700 dirs; no `/tmp` secrets.
 - [ ] Nothing installed or changed without an explicit click; versions pinned.
 - [ ] No `sh -c` with interpolated data; outside text is `PlainText`.
+- [ ] Every `TextField` is created by a `Loader` only while editing.
 - [ ] Optional `preview.png` of the real widget, no personal data in it.

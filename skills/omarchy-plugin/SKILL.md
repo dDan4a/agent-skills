@@ -112,9 +112,15 @@ destroyed at any time. A service is created once for the whole shell.
 - **Text from outside the shell** (file names, SSIDs, API data) gets
   `textFormat: Text.PlainText` and `elide`. Default AutoText renders it as
   rich text.
+- **Text fields exist only while typing.** A live `TextField` (Qt 6.12) reads
+  the clipboard on every clipboard change to know whether it could paste,
+  even while hidden; a clipboard owner that streams forever can stall the
+  whole shell. Create it with a `Loader { active: editing }` and reach it as
+  `loader.item`. Reviewers flag always-instantiated fields.
 - **Keyboard:** `KeyboardPanel` needs a `focusTarget`. `PanelKeyCatcher`
-  sees keys before children, so set `blocked: field.activeFocus` while an
-  inline `TextField` is focused, or h/j/k/l, x and Enter never reach it.
+  sees keys before children, so set `blocked: loader.item !== null &&
+  loader.item.activeFocus` while an inline `TextField` is focused, or h/j/k/l,
+  x and Enter never reach it.
 - **Colors and sizes are bindings.** Use `bar.foreground`, `Color.*` and
   `Style.space(px)`; never copy a value once, or theme and font-size
   changes will not apply.
