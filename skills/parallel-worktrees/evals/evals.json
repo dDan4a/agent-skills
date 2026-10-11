@@ -1,0 +1,73 @@
+{
+  "skill_name": "parallel-worktrees",
+  "evals": [
+    {
+      "id": 1,
+      "name": "start-task",
+      "prompt": "The login handler in this repo returns 500 when the password is empty. Start on a fix in a new branch. Other agent sessions are working in this repo too.",
+      "expected_output": "Creates the task worktree with `wt new acme/api fix/...` (not git worktree add, not a branch switch in the main checkout), makes the change inside it, leaves the main checkout on main and clean, does not push, and reports branch and worktree path.",
+      "files": [
+        "evals/sandbox.sh"
+      ],
+      "expectations": [
+        "The worktree was created with `wt new` (the transcript shows a `wt new` command), not with `git worktree add`, `git checkout -b` or `git switch` run by the agent",
+        "The new worktree is at $WT_ROOT/acme/.worktrees/api/<branch>",
+        "The branch name starts with `fix/`",
+        "The main checkout acme/api is still on `main` with no uncommitted changes",
+        "The worktree's src/login.go no longer panics on an empty password (it answers with a 4xx), and the main checkout's src/login.go is unchanged",
+        "Nothing was pushed or merged, and the final reply names the branch and the worktree path"
+      ]
+    },
+    {
+      "id": 2,
+      "name": "herdr-handoff",
+      "prompt": "I'm in Herdr. Hand this off to a new Claude session so I can keep using this one: the dashboard in acme/web needs a dark mode toggle. The styles are in src/main.go for now (yes, weird). Keep the light theme as the default and don't touch the api repo.",
+      "expected_output": "Runs `wt new acme/web feat/... --agent claude --brief -` with a self-contained brief (task, file, constraints, next step) and does not touch acme/web code itself.",
+      "files": [
+        "evals/sandbox.sh"
+      ],
+      "expectations": [
+        "The agent ran `wt new` for acme/web with `--agent claude` and `--brief` (the herdr log shows `worktree create` for web, `agent start --kind claude` and `agent prompt`)",
+        "The new worktree is at $WT_ROOT/acme/.worktrees/web/<branch>",
+        "The branch name starts with `feat/` or another descriptive prefix, not a random name",
+        "The handoff prompt in the herdr log mentions the dark mode toggle, src/main.go, light theme as default and not touching the api repo",
+        "The handoff prompt says what the next step is",
+        "No file in acme/web or in its new worktree was changed or committed by this session",
+        "The agent did not create the worktree with `git worktree add` or call `herdr` directly instead of `wt`"
+      ]
+    },
+    {
+      "id": 3,
+      "name": "cleanup-merged",
+      "prompt": "Clean up the worktrees under acme whose branches are already merged.",
+      "expected_output": "Uses `wt sync acme` (or `wt clean --all acme`): fix/merged and the squash-merged feat/squashed are removed; feat/wip (unmerged), feat/empty (no commits) and fix/dirty (merged but has uncommitted notes.txt) stay, and the agent tells the user about fix/dirty instead of discarding its changes.",
+      "files": [
+        "evals/sandbox.sh"
+      ],
+      "expectations": [
+        "The agent used `wt sync` or `wt clean`, not `rm -rf` and not hand-run `git worktree remove`",
+        "The fix/merged worktree and branch are gone",
+        "The feat/squashed worktree and branch are gone (squash-merged on origin)",
+        "The feat/wip and feat/empty worktrees still exist",
+        "The fix/dirty worktree still exists with notes.txt intact",
+        "The final reply tells the user that fix/dirty is merged but has uncommitted changes and leaves the decision to them"
+      ]
+    },
+    {
+      "id": 4,
+      "name": "sessionend-hook",
+      "prompt": "Set up Claude Code so that when a session ends, its worktree is removed automatically once the branch is merged. My Claude settings live in my dotfiles, ~/dotfiles/claude/settings.json (symlinked to ~/.claude/settings.json). wt is already in ~/.local/bin, and my projects root is in $WT_ROOT.",
+      "expected_output": "Adds a SessionEnd hook running `wt hook` to ~/dotfiles/claude/settings.json, with WT_ROOT set in the command because it is not ~/projects, keeps the existing settings, and checks the command.",
+      "files": [
+        "evals/sandbox.sh"
+      ],
+      "expectations": [
+        "~/dotfiles/claude/settings.json (in the sandbox home) has hooks.SessionEnd with a command that runs `wt hook`",
+        "The hook command calls wt by an absolute or $HOME-based path, not a bare `wt` that depends on the hook's PATH",
+        "The hook command sets WT_ROOT to the sandbox projects root",
+        "With the hook added, the settings that were there before (model, permissions) are still there and the file is valid JSON",
+        "The agent ran the configured hook command itself (for example piped a JSON with a cwd into it); `wt sync --dry-run` alone does not count"
+      ]
+    }
+  ]
+}
