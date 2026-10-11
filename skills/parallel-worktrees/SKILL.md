@@ -93,3 +93,10 @@ remote branch is not touched; delete it when merging (the forge's option).
 
 Agents without a session-end hook: run `wt sync` when the user asks to tidy
 up, or at the start of a session.
+
+## Testing `wt` itself
+
+Use a throwaway `WT_ROOT` (a bare `origin` plus a clone) and run `wt` with
+`env -u HERDR_ENV`. Inside Herdr, `wt new` opens a Herdr workspace for every
+test repo, and those workspaces stay after the test. To test the Herdr path
+itself, use a separate Herdr session (`herdr --session`) and stop it afterwards.
