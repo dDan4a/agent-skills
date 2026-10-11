@@ -5,8 +5,8 @@ that read [Agent Skills](https://agentskills.io)).
 
 | Skill | What it teaches |
 |---|---|
-| [`omarchy-plugin`](skills/omarchy-plugin/SKILL.md) | Writing, debugging and publishing [Omarchy](https://omarchy.org) shell plugins: the manifest, services and bar widgets that work across several monitors, panels and the UI kit, IPC, settings, and what the plugin marketplace review asks for. Comes with a working template plugin. |
-| [`parallel-worktrees`](skills/parallel-worktrees/SKILL.md) | Running several agent sessions at once without collisions: one task = one branch = one git worktree = one session. Comes with `wt`, a script that creates task worktrees, hands a task off to a new session (in Herdr) and removes worktrees once their branch is merged, including squash merges, from a Claude Code `SessionEnd` hook. |
+| [`omarchy-plugin`](skills/omarchy-plugin/SKILL.md) | Writing, debugging and publishing [Omarchy](https://omarchy.org) shell plugins: the manifest, services and bar widgets that work across several monitors, panels and the UI kit, IPC, settings, and what the plugin marketplace review asks for (no Qt text fields: text input goes through the bundled `LineEdit.qml`). Comes with a working template plugin. |
+| [`parallel-worktrees`](skills/parallel-worktrees/SKILL.md) | Running several agent sessions at once without collisions: one task = one branch = one git worktree = one session. Comes with `wt`, a script that creates task worktrees, hands a task off to a new session (in Herdr) and removes worktrees once their branch is merged, including squash merges, from a Claude Code `SessionEnd` hook. In Herdr it also closes the repo's workspace after its last worktree. |
 
 ## Install
 
@@ -22,7 +22,12 @@ Claude Code, as a plugin marketplace:
 ```
 /plugin marketplace add dDan4a/agent-skills
 /plugin install omarchy-plugin@dan4a-skills
+/plugin install parallel-worktrees@dan4a-skills
 ```
+
+Update an installed plugin with
+`claude plugin marketplace update dan4a-skills && claude plugin update <name>@dan4a-skills`,
+then `/reload-plugins`.
 
 By hand: copy `skills/<name>/` into your agent's skills directory, for
 example `~/.claude/skills/`, `~/.codex/skills/` or `~/.gemini/skills/`.
@@ -33,8 +38,10 @@ Ask for what you want; the agent loads the skill when it fits:
 
 > Make an Omarchy bar widget that shows my GitHub notifications, with a panel listing them.
 
-Skills read the installed sources first (`/usr/share/omarchy/shell/`) and
-treat them as the truth, so they keep working as Omarchy changes.
+> Start a task in api to fix the login timeout, in its own worktree and session.
+
+`omarchy-plugin` reads the installed sources first (`/usr/share/omarchy/shell/`)
+and treats them as the truth, so it keeps working as Omarchy changes.
 
 ## Evals
 
@@ -51,6 +58,13 @@ MODEL=claude-opus-5-5 scripts/run-evals parallel-worktrees /tmp/evals/iteration-
 
 Then grade the runs against the expectations, for example with skill-creator's
 grader and benchmark viewer.
+
+Latest results (Claude Opus 5.5, share of checks passed):
+
+| Skill | With the skill | Without |
+|---|---|---|
+| `omarchy-plugin` 0.1.2 | 100% | 64% |
+| `parallel-worktrees` 0.1.1 | 100% | 55% |
 
 ## License
 
