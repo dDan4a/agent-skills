@@ -114,18 +114,28 @@ destroyed at any time. A service is created once for the whole shell.
 - **Text from outside the shell** (file names, SSIDs, API data) gets
   `textFormat: Text.PlainText` and `elide`. Default AutoText renders it as
   rich text.
-- **Text fields exist only while typing.** A live `TextField` (Qt 6.12) reads
-  the clipboard on every clipboard change to know whether it could paste,
-  even while hidden; a clipboard owner that streams forever can stall the
-  whole shell. Create it with a `Loader { active: editing }` and reach it as
-  `loader.item`, where `editing` turns on when the user starts a note (a
-  click, a key) and off on Enter or Escape. `active: panel.opened` is not
-  enough: a panel left open keeps a live field. Reviewers flag
-  always-instantiated fields.
+- **No `TextField`/`TextInput`/`TextEdit`/`TextArea`, the kit's included.**
+  Qt 6.12 text inputs read foreign clipboard text by themselves on every
+  clipboard change (to know whether they could paste), with no size limit or
+  deadline, whether hidden or focused; a clipboard owner that streams forever
+  stalls the whole shell. Creating the field through a `Loader` only while
+  typing does not help: it still reads while the user types, and reviewers
+  rejected that workaround. Copy `template/LineEdit.qml` next to your QML and
+  use it instead: a one-line editor on key events that pastes only on Ctrl+V,
+  through `wl-paste` in its own process with a timeout and a size cap.
+  ```qml
+  LineEdit {
+    id: input
+    width: parent.width
+    placeholderText: "New note"
+    foreground: root.foreground
+    onAccepted: { root.source.save(text); text = "" }
+    onCanceled: root.close()
+  }
+  ```
 - **Keyboard:** `KeyboardPanel` needs a `focusTarget`. `PanelKeyCatcher`
-  sees keys before children, so set `blocked: loader.item !== null &&
-  loader.item.activeFocus` while an inline `TextField` is focused, or h/j/k/l,
-  x and Enter never reach it.
+  sees keys before children, so set `blocked: input.activeFocus` while an
+  inline `LineEdit` is focused, or h/j/k/l, x and Enter never reach it.
 - **Colors and sizes are bindings.** Use `bar.foreground`, `Color.*` and
   `Style.space(px)`; never copy a value once, or theme and font-size
   changes will not apply.
@@ -152,4 +162,4 @@ destroyed at any time. A service is created once for the whole shell.
   singletons, keyboard conventions, the two widget + panel patterns
 - `references/marketplace.md`: submitting to the marketplace, the automated
   security baseline, labels, updates after listing, a pre-submission checklist
-- `template/`: the working example plugin
+- `template/`: the working example plugin; `LineEdit.qml` is the text input to copy when a panel needs one

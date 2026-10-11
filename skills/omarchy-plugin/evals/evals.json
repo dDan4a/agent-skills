@@ -43,7 +43,7 @@
       "id": 3,
       "name": "marketplace-prep",
       "prompt": "I want to submit my Clipnote plugin (~/.config/omarchy/plugins/io.github.someone.clipnote, repo github.com/someone/clipnote, MIT licensed) to the Omarchy plugin marketplace. Get it ready and draft the submission issue for me.",
-      "expected_output": "Fixes what the bot and reviewers would flag (second manifest, license, install commands in README, token and note text in argv, sh -c with data, notes in /tmp, always-live TextField) and drafts the issue with the six headings without filing it.",
+      "expected_output": "Fixes what the bot and reviewers would flag (second manifest, license, install commands in README, token and note text in argv, sh -c with data, notes in /tmp, TextField replaced by LineEdit) and drafts the issue with the six headings without filing it.",
       "files": [
         "evals/sandbox.sh",
         "evals/files/clipnote/manifest.json",
@@ -60,7 +60,7 @@
         "Neither the token nor the note text is passed in a process's argv (stdin or a 0600 file instead)",
         "Notes are no longer written through an `sh -c` string or to /tmp; the notes file is private (0600, or in a 0700 directory)",
         "Saved notes are loaded back when the service starts, so a shell restart does not lose them",
-        "The TextField is created by a Loader only while editing",
+        "The TextField is replaced by a LineEdit (template/LineEdit.qml) and no TextField/TextInput/TextEdit/TextArea remains; pasting happens only on Ctrl+V through wl-paste with a timeout and a size limit",
         "The final reply has a draft issue with the headings Repository URL, Category, Tags, Suggest a missing tag, Maintainer notes, Submission checklist in that order, a valid category, 1-3 valid tags and the checklist items checked",
         "The agent did not file the issue or push, and asks the user before publishing"
       ]

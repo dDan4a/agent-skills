@@ -57,7 +57,7 @@ with a service.
 | `PanelActionButton` | Small icon button at the end of a row: `iconText`, `tooltipText`, `foreground`, `hoverColor` (pass `bar.urgent` for destructive), `clicked()`. |
 | `Button` | `text`, `iconText`, `tooltipText`, `bordered`, `selected`, `active`, `clicked()`, `rightClicked()`. |
 | `ButtonGroup` | Pick one of `options` (`{value, label, icon, tooltip}`); `changed(value)`. |
-| `TextField` | Qt TextField with the kit's styling; `password`, `foreground`. Reads the clipboard while alive: load it with a `Loader` only while editing. |
+| `TextField` | Qt TextField with the kit's styling; `password`, `foreground`. Do not use: reads the clipboard by itself on every clipboard change. Use `template/LineEdit.qml`. |
 | `Toggle` / `ToggleSwitch` | Labeled row / bare switch. Stateless: flip `checked` yourself. |
 | `Dropdown`, `SearchableDropdown` | `options`, `value`, `changed(string)`, `popupOpen`. |
 | `MultiSelect` | `values`, `changed(var)`; can load options from `optionsCommand`. |
