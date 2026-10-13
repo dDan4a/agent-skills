@@ -1,0 +1,12 @@
+{
+  "schemaVersion": 1,
+  "id": "io.github.someone.snapback",
+  "name": "Snapback",
+  "version": "0.2.0",
+  "author": "someone",
+  "description": "Snapshots of your dotfiles from the bar, with the snapback CLI.",
+  "license": "MIT",
+  "kinds": ["service", "bar-widget"],
+  "entryPoints": { "service": "Service.qml", "barWidget": "BarWidget.qml" },
+  "barWidget": { "displayName": "Snapback", "category": "System", "defaultSection": "right" }
+}

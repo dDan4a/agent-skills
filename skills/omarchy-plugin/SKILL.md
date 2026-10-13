@@ -1,6 +1,6 @@
 ---
 name: omarchy-plugin
-description: Write, debug and publish plugins for the Omarchy shell (Quattro, Quickshell/QML) - bar widgets, panels, services, overlays, menus and full bars. Use when creating or changing anything under ~/.config/omarchy/plugins/, writing a manifest.json for Omarchy, making a widget work across several monitors, or submitting a plugin to the Omarchy plugin marketplace (omacom/omarchy-plugin-marketplace).
+description: Write, debug and publish plugins for the Omarchy shell (Quattro, Quickshell/QML) - bar widgets, panels, services, overlays, menus and full bars. Use when creating or changing anything under ~/.config/omarchy/plugins/, writing a manifest.json for Omarchy, working in any repo that has an Omarchy plugin manifest.json (often symlinked from ~/.config/omarchy/plugins/ to a project checkout), changing the companion CLI or daemon a published plugin runs or installs, making a widget work across several monitors, or submitting or re-verifying a plugin in the Omarchy plugin marketplace (omacom/omarchy-plugin-marketplace).
 license: MIT
 ---
 
@@ -151,6 +151,31 @@ destroyed at any time. A service is created once for the whole shell.
   history, a cache) reads it back when it is created, before its first
   write; otherwise the first save after `omarchy restart shell` overwrites
   everything saved before.
+
+## Companion CLI
+
+When the plugin runs or installs its own CLI or daemon (`go install
+mod@vX.Y.Z`), reviewers read that code too, with the same rules, plus:
+
+- **Files of other programs only through confined operations.** Open the
+  directory once with Go `os.OpenRoot` and write, rename and remove through
+  the `*os.Root`, so a symlink or `..` in a stored path cannot reach outside
+  it. Never create symlinks that point out of it.
+- **Reading user files:** open with `O_NOFOLLOW|O_NONBLOCK`, check the type
+  on the open fd (`f.Stat()`, regular file only), then read through
+  `io.LimitReader(f, max+1)`. A path swapped for a FIFO otherwise hangs the
+  process; a size check before reading misses a file that is still growing.
+- **A file restored after deletion is created 0600.** git and similar stores
+  do not keep the mode; a restored `~/.claude/settings.json` that was 0600
+  would come back 0644. An existing file keeps its mode.
+- **Copying user files** (history, backups, snapshots): a secret filter is
+  a heuristic, so also refuse paths that hold keys or passwords: `.ssh`,
+  `.gnupg`, `.netrc`, `.pgpass`, `.git-credentials`, `.kube`, `.aws`,
+  `.docker`, `*_history`, and the like. A check that errors refuses the file
+  (fail closed).
+- **Pin a CLI version that has every command the QML calls.** Bumping the
+  QML to call a new subcommand without bumping the pinned tag ships a button
+  that fails. See the release checklist in `references/marketplace.md`.
 
 ## References
 

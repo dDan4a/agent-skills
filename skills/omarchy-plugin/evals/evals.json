@@ -64,6 +64,32 @@
         "The final reply has a draft issue with the headings Repository URL, Category, Tags, Suggest a missing tag, Maintainer notes, Submission checklist in that order, a valid category, 1-3 valid tags and the checklist items checked",
         "The agent did not file the issue or push, and asks the user before publishing"
       ]
+    },
+    {
+      "id": 4,
+      "name": "companion-cli-restore",
+      "prompt": "My Snapback plugin (~/.config/omarchy/plugins/io.github.someone.snapback, already listed in the Omarchy marketplace) snapshots dotfiles with its own Go CLI in cli/. Add a `snapback restore <file>` command that puts the saved copy back (also when the original was deleted), and a way to trigger it from the bar. I'll tag the CLI as v0.3.0. Get it ready for re-verification.",
+      "expected_output": "Adds restore to the CLI with confined writes (os.Root), safe reads (O_NOFOLLOW|O_NONBLOCK, fstat, LimitReader), 0600 for recreated files, hardens save the same way and refuses key/password paths; bumps the pinned CLI tag in QML to v0.3.0 and the manifest version; lists the release steps (push the tag before the verify-plugin form) without pushing or filing anything.",
+      "files": [
+        "evals/sandbox.sh",
+        "evals/files/snapback/manifest.json",
+        "evals/files/snapback/Service.qml",
+        "evals/files/snapback/BarWidget.qml",
+        "evals/files/snapback/README.md",
+        "evals/files/snapback/cli/go.mod",
+        "evals/files/snapback/cli/main.go"
+      ],
+      "expectations": [
+        "The CLI has a `restore` command, and writes or removes the user's files only through an `*os.Root` (os.OpenRoot), not os.WriteFile/os.Create on a joined path",
+        "Files are read with O_NOFOLLOW (and O_NONBLOCK), the type is checked on the open file (Stat on the fd, regular files only), and the read is bounded with io.LimitReader or an equivalent cap",
+        "A file restored after the original was deleted is created with mode 0600; an existing file keeps its mode",
+        "save/restore refuse paths with keys or passwords (at least .ssh, .gnupg and one more of .netrc, .aws, .git-credentials, *_history), and an error during that check refuses the file",
+        "Service.qml pins the CLI at v0.3.0 (`go install ...@v0.3.0`), and every snapback subcommand the QML calls exists in the CLI",
+        "manifest.json `version` is bumped above 0.2.0",
+        "The restore is triggered from the service (not a Timer/Process in the widget) and takes an explicit user click",
+        "The final reply says to push the v0.3.0 tag before filing the verify-plugin.yml form with the full commit SHA, and the agent did not push, tag or file anything",
+        "`go vet` passes in cli/ and `omarchy plugin validate` passes"
+      ]
     }
   ]
 }

@@ -102,7 +102,8 @@ From real reviews, most frequent first:
 8. Structural: a second manifest, no LICENSE, edited issue headings,
    duplicates.
 
-Reviewers also read third-party CLIs or daemons the plugin requires.
+Reviewers also read third-party CLIs or daemons the plugin requires or
+installs, including your own: see "Companion CLI" in `SKILL.md`.
 
 ## Labels
 
@@ -126,6 +127,16 @@ Reviewers also read third-party CLIs or daemons the plugin requires.
   approval; the old snapshot stays listed until then.
 - Batch changes into releases: every verified version is another review.
 
+## Release checklist (update after listing)
+
+- [ ] `version` in `manifest.json` bumped.
+- [ ] The companion CLI tag the plugin pins (`go install mod@vX.Y.Z`) is at
+      least the release that has every subcommand and flag the QML calls;
+      grep the QML for CLI calls and run each against that tag.
+- [ ] That CLI tag is pushed (and `go install mod@vX.Y.Z` works from a clean
+      module cache) before the `verify-plugin.yml` form is filed.
+- [ ] Plugin commit pushed; the form gets its full 40-character SHA.
+
 ## Pre-submission checklist
 
 - [ ] `omarchy plugin validate` passes on a real (non-symlink) checkout.
@@ -139,4 +150,8 @@ Reviewers also read third-party CLIs or daemons the plugin requires.
 - [ ] Nothing installed or changed without an explicit click; versions pinned.
 - [ ] No `sh -c` with interpolated data; outside text is `PlainText`.
 - [ ] No `TextField`/`TextInput`/`TextEdit`/`TextArea`; text input is `LineEdit`.
+- [ ] Companion CLI, if any: other programs' files only through `os.Root`;
+      user files read `O_NOFOLLOW|O_NONBLOCK`, fstat, `LimitReader`;
+      restored files 0600; copied paths skip key/password locations, fail
+      closed; pinned tag has every command the QML calls.
 - [ ] Optional `preview.png` of the real widget, no personal data in it.

@@ -22,5 +22,6 @@ mkdir -p "$PL"
 case $id in
   2) cp -r "$files/weather" "$PL/io.github.someone.weather" ;;
   3) cp -r "$files/clipnote" "$PL/io.github.someone.clipnote" ;;
+  4) cp -r "$files/snapback" "$PL/io.github.someone.snapback" ;;
 esac
 echo "$PL"
