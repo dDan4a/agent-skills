@@ -27,6 +27,16 @@
       "keywords": ["git", "worktree", "parallel", "agents", "herdr"],
       "skills": ["./skills/parallel-worktrees"],
       "strict": false
+    },
+    {
+      "name": "herdr-tabs",
+      "source": "./",
+      "description": "Split parallel ideas into Herdr tabs in the current workspace, one agent per idea, with emoji + topic tab names and a short report back to the session that opened them.",
+      "version": "0.1.0",
+      "license": "MIT",
+      "keywords": ["herdr", "tabs", "parallel", "agents"],
+      "skills": ["./skills/herdr-tabs"],
+      "strict": false
     }
   ]
 }

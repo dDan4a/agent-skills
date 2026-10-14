@@ -1,0 +1,46 @@
+{
+  "skill_name": "herdr-tabs",
+  "evals": [
+    {
+      "id": 1,
+      "name": "split-ideas",
+      "prompt": "I'm in Herdr. Three things are on my mind, let's run them in parallel: 1) think through whether my Omarchy plugin should store its history in SQLite or plain JSON files, 2) find out what it takes to publish a package to the AUR these days, 3) fix the typo 'recieve' in notes/ideas.md. Split them up.",
+      "expected_output": "Opens three tabs in the current workspace (no workspaces, no worktrees) labelled with an emoji type and a short topic (💡 for the storage decision, 🔍 for the AUR research, 🔧 for the typo fix), starts an agent in each, and sends each a self-contained brief that includes a reply-to line with w1:p1. Does not do the three ideas itself.",
+      "files": ["evals/sandbox.sh"],
+      "expectations": [
+        "The herdr log shows exactly three `tab create` calls, each with `--workspace w1` and `--no-focus`, and no `workspace create` or `worktree create`",
+        "The SQLite-vs-JSON tab label starts with 💡, the AUR tab label starts with 🔍, the typo tab label starts with 🔧",
+        "Each label's topic is 1–2 short kebab-case words about the subject (for example `plugin-storage`, `aur`, `ideas-typo`), at most 20 characters",
+        "Each tab got `agent start` with `--kind claude` and the pane id returned by its `tab create`, and an agent name matching [a-z][a-z0-9_-]{0,31}",
+        "Each `agent prompt` contains the idea with enough context to act on it alone, and an instruction to report back with `herdr agent prompt w1:p1`",
+        "The session did not research the AUR, decide the storage question or fix the typo itself (notes/ideas.md is unchanged by this session)",
+        "The final reply lists the opened tabs by label"
+      ]
+    },
+    {
+      "id": 2,
+      "name": "reuse-tab",
+      "prompt": "I'm in Herdr. Two more ideas for separate tabs: the dark mode toggle should also follow the system theme, and I want to try a keyboard shortcut cheat-sheet widget for the bar.",
+      "expected_output": "Checks the existing tabs, sends the dark mode follow-up to the existing `💡 dark-mode` tab's agent instead of opening a new tab, and opens one new tab for the cheat-sheet widget with an emoji + topic label.",
+      "files": ["evals/sandbox.sh"],
+      "expectations": [
+        "The herdr log shows `tab list` (or `agent list`/`pane list`) before any `tab create`",
+        "The dark mode follow-up went to the existing tab's agent (`agent prompt` targeting `dark-mode` or `w1:p4`), and no new tab was created for dark mode",
+        "Exactly one `tab create`, for the cheat-sheet widget, with a label of an emoji (💡, 🔧 or 🔍) plus a short kebab-case topic",
+        "The new tab's prompt includes a report-back instruction to w1:p1"
+      ]
+    },
+    {
+      "id": 3,
+      "name": "outside-herdr",
+      "prompt": "Split these into separate tabs: research Wayland screen recording tools, and decide on a name for my new CLI.",
+      "expected_output": "Notices it is not inside Herdr (HERDR_ENV is not 1), does not call herdr, and gives the user one self-contained brief per idea to paste into new sessions.",
+      "files": ["evals/sandbox.sh"],
+      "expectations": [
+        "The herdr log is empty (`none`): no herdr command ran",
+        "The final reply says it is not running inside Herdr",
+        "The final reply has two separate briefs, one per idea, each usable on its own"
+      ]
+    }
+  ]
+}

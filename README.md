@@ -7,6 +7,7 @@ that read [Agent Skills](https://agentskills.io)).
 |---|---|
 | [`omarchy-plugin`](skills/omarchy-plugin/SKILL.md) | Writing, debugging and publishing [Omarchy](https://omarchy.org) shell plugins: the manifest, services and bar widgets that work across several monitors, panels and the UI kit, IPC, settings, and what the plugin marketplace review asks for (no Qt text fields: text input goes through the bundled `LineEdit.qml`). Comes with a working template plugin. |
 | [`parallel-worktrees`](skills/parallel-worktrees/SKILL.md) | Running several agent sessions at once without collisions: one task = one branch = one git worktree = one session. Comes with `wt`, a script that creates task worktrees, hands a task off to a new session (in Herdr) and removes worktrees once their branch is merged, including squash merges, from a Claude Code `SessionEnd` hook. In Herdr it also closes the repo's workspace after its last worktree. |
+| [`herdr-tabs`](skills/herdr-tabs/SKILL.md) | Splitting several ideas into separate [Herdr](https://herdr.dev) tabs in the current workspace, one agent per idea: tab names of an emoji type and a short topic (💡 idea, 🔧 task, 🔍 research), a self-contained brief for each agent, follow-ups sent to a topic's existing tab, and a 2–3 line report back to the session that opened them. Outside Herdr it writes the briefs to paste instead. |
 
 ## Install
 
@@ -23,6 +24,7 @@ Claude Code, as a plugin marketplace:
 /plugin marketplace add dDan4a/agent-skills
 /plugin install omarchy-plugin@dan4a-skills
 /plugin install parallel-worktrees@dan4a-skills
+/plugin install herdr-tabs@dan4a-skills
 ```
 
 Update an installed plugin with
@@ -39,6 +41,8 @@ Ask for what you want; the agent loads the skill when it fits:
 > Make an Omarchy bar widget that shows my GitHub notifications, with a panel listing them.
 
 > Start a task in api to fix the login timeout, in its own worktree and session.
+
+> Three ideas, split them into tabs: SQLite or JSON for the plugin's history, what the AUR asks for now, and the typo in notes.
 
 `omarchy-plugin` reads the installed sources first (`/usr/share/omarchy/shell/`)
 and treats them as the truth, so it keeps working as Omarchy changes.
@@ -65,6 +69,7 @@ Latest results (Claude Opus 5.5, share of checks passed):
 |---|---|---|
 | `omarchy-plugin` 0.1.2 | 100% | 64% |
 | `parallel-worktrees` 0.1.1 | 100% | 55% |
+| `herdr-tabs` 0.1.0 | 100% | 43% |
 
 ## License
 
