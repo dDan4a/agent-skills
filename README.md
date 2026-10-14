@@ -13,46 +13,50 @@ that read <a href="https://agentskills.io">Agent Skills</a>), each tested with e
 
 ## Skills
 
-| Skill | What it teaches |
-|---|---|
-| [`omarchy-plugin`](skills/omarchy-plugin/SKILL.md) | Writing, debugging and publishing [Omarchy](https://omarchy.org) shell plugins. Comes with a working template plugin. |
-| [`parallel-worktrees`](skills/parallel-worktrees/SKILL.md) | Several agent sessions at once without collisions: one task = one branch = one git worktree = one session. Comes with `wt`. |
-| [`herdr-tabs`](skills/herdr-tabs/SKILL.md) | Several ideas split into [Herdr](https://herdr.dev) tabs, one agent per idea, each reporting back. |
-| [`github-readme`](skills/github-readme/SKILL.md) | A GitHub README that looks good and keeps working: native Mermaid charts, alerts, light/dark images, honest badges. |
+Click a card for details.
 
+<table>
+<tr>
+<td width="50%" valign="top">
 <details>
-<summary><b>omarchy-plugin</b> in detail</summary>
+<summary><b><code>omarchy-plugin</code></b><br>Write, debug and publish <a href="https://omarchy.org">Omarchy</a> shell plugins. Comes with a working template plugin.</summary>
 
-The manifest, services and bar widgets that work across several monitors, panels and the UI kit, IPC, settings,
-and what the plugin marketplace review asks for (no Qt text fields: text input goes through the bundled
-`LineEdit.qml`). It reads the installed sources first (`/usr/share/omarchy/shell/`) and treats them as the truth,
-so it keeps working as Omarchy changes.
+The manifest, services and bar widgets that work across several monitors, panels and the UI kit, IPC, settings, and what the plugin marketplace review asks for (no Qt text fields: text input goes through the bundled `LineEdit.qml`). It reads the installed sources first (`/usr/share/omarchy/shell/`) and treats them as the truth, so it keeps working as Omarchy changes.
+
+[SKILL.md](skills/omarchy-plugin/SKILL.md) · `/plugin install omarchy-plugin@dan4a-skills`
 </details>
-
+</td>
+<td width="50%" valign="top">
 <details>
-<summary><b>parallel-worktrees</b> in detail</summary>
+<summary><b><code>parallel-worktrees</code></b><br>Several agent sessions at once without collisions: one task = one branch = one git worktree = one session.</summary>
 
-`wt` is a script that creates task worktrees, hands a task off to a new session (in Herdr) and removes worktrees
-once their branch is merged, including squash merges, from a Claude Code `SessionEnd` hook. In Herdr it also
-closes the repo's workspace after its last worktree.
+Comes with `wt`, a script that creates task worktrees, hands a task off to a new session (in Herdr) and removes worktrees once their branch is merged, including squash merges, from a Claude Code `SessionEnd` hook. In Herdr it also closes the repo's workspace after its last worktree.
+
+[SKILL.md](skills/parallel-worktrees/SKILL.md) · `/plugin install parallel-worktrees@dan4a-skills`
 </details>
-
+</td>
+</tr>
+<tr>
+<td width="50%" valign="top">
 <details>
-<summary><b>herdr-tabs</b> in detail</summary>
+<summary><b><code>herdr-tabs</code></b><br>Several ideas split into <a href="https://herdr.dev">Herdr</a> tabs, one agent per idea, each reporting back.</summary>
 
-Tabs in the current workspace with names of an emoji type and a short topic (💡 idea, 🔧 task, 🔍 research), a
-self-contained brief for each agent, follow-ups sent to a topic's existing tab, and a 2–3 line report back to the
-session that opened them. Outside Herdr it writes the briefs to paste instead.
+Tabs in the current workspace with names of an emoji type and a short topic (💡 idea, 🔧 task, 🔍 research), a self-contained brief for each agent, follow-ups sent to a topic's existing tab, and a 2–3 line report back to the session that opened them. Outside Herdr it writes the briefs to paste instead.
+
+[SKILL.md](skills/herdr-tabs/SKILL.md) · `/plugin install herdr-tabs@dan4a-skills`
 </details>
-
+</td>
+<td width="50%" valign="top">
 <details>
-<summary><b>github-readme</b> in detail</summary>
+<summary><b><code>github-readme</code></b><br>A GitHub README that looks good and keeps working: native charts, alerts, light/dark images, honest badges.</summary>
 
-What it is, a screenshot, install and use on the first screen; only what GitHub renders natively (tables as
-panels, alerts, `<details>`, Mermaid diagrams and `xychart-beta` charts built from the repo's data, `<picture>`
-for light and dark images); badges only for real state, no live third-party widgets; and a render check with
-`gh api markdown` before calling it done.
+What it is, a screenshot, install and use on the first screen; only what GitHub renders natively (tables as panels, alerts, `<details>`, Mermaid diagrams and `xychart-beta` charts built from the repo's data, `<picture>` for light and dark images); badges only for real state, no live third-party widgets; and a render check with `gh api markdown` before calling it done.
+
+[SKILL.md](skills/github-readme/SKILL.md) · `/plugin install github-readme@dan4a-skills`
 </details>
+</td>
+</tr>
+</table>
 
 ## Install
 
