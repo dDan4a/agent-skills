@@ -1,0 +1,60 @@
+<!doctype html>
+<!-- Skill cards for README.md, same style as the dDan4a profile. Rendered to ../<card>-<theme>.png by render.sh -->
+<meta charset="utf-8">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;600&family=JetBrains+Mono:wght@400;600&display=block" rel="stylesheet">
+<style>
+  :root { --bg: #1a1b26; --fg: #e6e1d6; --dim: #a9b1d6; --mute: #6b7089; --accent: #7aa2f7; --edge: #3b3f55; --shadow: rgba(0,0,0,.45); }
+  .light { --bg: #f4f1ea; --fg: #1f2335; --dim: #4a5070; --mute: #8a8fa6; --accent: #3d59a1; --edge: #d6d0c2; --shadow: rgba(40,40,60,.18); }
+  * { box-sizing: border-box; margin: 0; }
+  html, body { background: transparent; }
+  body { filter: drop-shadow(4px 6px 6px var(--shadow)); padding: 12px 16px 20px 12px; font: 400 16px "IBM Plex Sans", sans-serif; color: var(--fg); }
+  .card { position: relative; background: var(--bg); border: 1.5px solid var(--edge);
+          clip-path: polygon(0 0, 100% 0, 100% calc(100% - 14px), calc(100% - 14px) 100%, 0 100%); overflow: hidden; }
+  .label { font: 600 11px "JetBrains Mono", monospace; letter-spacing: .14em; text-transform: uppercase; color: var(--mute); }
+  h2 { font: 600 22px "JetBrains Mono", monospace; }
+  p { color: var(--dim); }
+  .info { width: 744px; height: 172px; padding: 22px 30px; display: flex; flex-direction: column; justify-content: center; gap: 8px; }
+  .info p { font-size: 15px; line-height: 1.45; }
+  .chips { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 4px; }
+  .chip { font: 600 11px "JetBrains Mono", monospace; padding: 5px 9px; border: 1.5px solid var(--edge); color: var(--dim); }
+  .chip.on { border-color: var(--accent); color: var(--accent); }
+</style>
+
+<body>
+<template id="t-omarchy-plugin">
+  <div class="card info">
+    <span class="label">Omarchy shell · QML</span><h2>omarchy-plugin</h2>
+    <p>Write, debug and publish Omarchy shell plugins: the manifest, services, bar widgets across monitors, panels, IPC and the marketplace review.</p>
+    <div class="chips"><span class="chip on">100% eval checks · 64% without</span><span class="chip">template plugin</span></div>
+  </div>
+</template>
+
+<template id="t-parallel-worktrees">
+  <div class="card info">
+    <span class="label">Git · agent sessions</span><h2>parallel-worktrees</h2>
+    <p>Run several agent sessions without collisions: one task = one branch = one git worktree = one session, cleaned up once merged.</p>
+    <div class="chips"><span class="chip on">100% eval checks · 55% without</span><span class="chip">wt script</span><span class="chip">SessionEnd hook</span></div>
+  </div>
+</template>
+
+<template id="t-herdr-tabs">
+  <div class="card info">
+    <span class="label">Herdr</span><h2>herdr-tabs</h2>
+    <p>Split several ideas into Herdr tabs in the current workspace, one agent per idea, each reporting back to the session that opened it.</p>
+    <div class="chips"><span class="chip on">100% eval checks · 43% without</span><span class="chip">briefs outside Herdr</span></div>
+  </div>
+</template>
+
+<template id="t-github-readme">
+  <div class="card info">
+    <span class="label">GitHub · Markdown</span><h2>github-readme</h2>
+    <p>A README that looks good and keeps working: Mermaid charts from real data, alerts, light/dark images, honest badges, a render check.</p>
+    <div class="chips"><span class="chip on">100% eval checks · 86% without</span><span class="chip">native GitHub only</span></div>
+  </div>
+</template>
+
+<script>
+  const q = new URLSearchParams(location.search);
+  if (q.get("t") === "light") document.documentElement.className = "light";
+  document.body.append(document.getElementById("t-" + q.get("c")).content.cloneNode(true));
+</script>
