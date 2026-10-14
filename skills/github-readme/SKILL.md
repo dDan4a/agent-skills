@@ -102,10 +102,28 @@ A badge that would read "none" or "unknown" today waits until it has something t
 - Live third-party widgets: github-readme-stats, visitor counters, "typing"
   SVGs, streak cards. They rate-limit, go down and show broken images. If the
   user asks for one, add it and say that tradeoff once.
-- Emoji on every heading, walls of badges, ASCII art headers, text inside images.
+- Emoji on every heading, walls of badges, ASCII art headers, text inside images
+  (except designed cards, below, which carry their text in alt).
 - A hand-written table of contents in a short README: GitHub shows an outline
   button. Worth it only for long pages.
-- Colors or layout that need CSS: it will be stripped.
+- Colors or layout that need CSS in the README: it will be stripped (render it into an image instead, below).
+
+## Designed cards (when the user wants a styled look)
+
+Fonts, colors, borders and layout GitHub would strip can be rendered into
+images. Use this for a few hero elements (project cards, a header), not
+for text a reader needs to copy:
+
+- One HTML template in the repo (`assets/src/cards.html`), one `<template>` per
+  card, light and dark palettes as CSS variables, picked by a query parameter.
+- A script next to it renders each card in both themes at 2x with a transparent
+  background, for example
+  `chromium --headless --force-device-scale-factor=2 --default-background-color=00000000 --window-size=772,204 --screenshot=../<card>-<theme>.png "file://$PWD/cards.html?c=<card>&t=<theme>"`.
+  Look at the PNGs before using them.
+- Each card goes in `<picture>` with an alt that holds all its text; a comment in
+  the README names the script to rerun when a card's text or numbers change.
+- Expandable: put the `<picture>` in a `<details>`'s `<summary>`, the details
+  (commands, links) in the body as normal text. Clickable instead: wrap it in `<a>`.
 
 ## Check the rendering before saying done
 
