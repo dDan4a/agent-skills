@@ -37,6 +37,16 @@
       "keywords": ["herdr", "tabs", "parallel", "agents"],
       "skills": ["./skills/herdr-tabs"],
       "strict": false
+    },
+    {
+      "name": "github-readme",
+      "source": "./",
+      "description": "Design a GitHub README that looks good and never breaks: content first, honest badges, Mermaid diagrams and charts from real data, alerts, light/dark images, and a render check.",
+      "version": "0.1.0",
+      "license": "MIT",
+      "keywords": ["github", "readme", "markdown", "mermaid", "documentation"],
+      "skills": ["./skills/github-readme"],
+      "strict": false
     }
   ]
 }
