@@ -68,6 +68,23 @@
         "With the hook added, the settings that were there before (model, permissions) are still there and the file is valid JSON",
         "The agent ran the configured hook command itself (for example piped a JSON with a cwd into it); `wt sync --dry-run` alone does not count"
       ]
+    },
+    {
+      "id": 5,
+      "name": "merge-closes-child-session",
+      "prompt": "I'm in Herdr, this is the coordinating session in acme/web. The session that worked on feat/search is done: merge it into main and push. Then tidy up.",
+      "expected_output": "Merges feat/search into main in the main checkout and pushes, then runs `wt clean <feat/search worktree>` or `wt sync acme`, which removes the worktree and its Herdr workspace (and with it the idle child session). feat/busy is merged too but its agent is working: wt keeps it and the agent reports that instead of forcing it.",
+      "files": [
+        "evals/sandbox.sh"
+      ],
+      "expectations": [
+        "origin/main of acme/web contains the feat/search commit and the main checkout is on main, clean",
+        "The agent ran `wt clean` on the feat/search worktree or `wt sync` (the transcript shows it), after the push",
+        "The herdr log shows `worktree remove --workspace w-7` and the feat/search worktree and branch are gone",
+        "The herdr log has no `worktree remove --workspace w-8` and the feat/busy worktree still exists",
+        "The agent did not close the child session by hand (no `herdr agent prompt ... /exit`, `herdr workspace close`, `rm -rf` or hand-run `git worktree remove`)",
+        "The final reply says feat/busy was kept because its agent is still working"
+      ]
     }
   ]
 }

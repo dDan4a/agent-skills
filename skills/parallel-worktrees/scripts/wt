@@ -112,6 +112,7 @@ report() {
     case $1 in
       removed) notify "$2 merged, worktree removed" ;;
       skipped) notify "$2 merged but has uncommitted changes" "$3: kept" ;;
+      kept) say "$2 kept: $3" ;;
     esac
   fi
 }
@@ -155,6 +156,17 @@ clean_one() {
   if [ -n "$(git -C "$top" status --porcelain)" ]; then
     report skipped "$branch" "$top"; return 0
   fi
+  local ws="" busy
+  command -v herdr >/dev/null &&
+    ws=$(herdr worktree list --cwd "$main" 2>/dev/null | jq -r --arg p "$top" '.result.worktrees[] | select(.path == $p) | .open_workspace_id // empty')
+  # Removing the workspace kills its agents: leave it while one is mid-task. The caller's own pane is excluded,
+  # it is the session ending (hook) or the coordinator itself.
+  if [ -n "$ws" ]; then
+    busy=$(herdr agent list 2>/dev/null | jq -r --arg ws "$ws" --arg me "${HERDR_PANE_ID:-}" '[.result.agents[]? |
+      select(.workspace_id == $ws and .pane_id != $me and .agent_status != "idle" and .agent_status != "done") |
+      "agent \(.name // .agent) is \(.agent_status)"] | first // empty')
+    [ -n "$busy" ] && { report kept "$branch" "merged, $busy"; return 0; }
+  fi
   [ "$DRY_RUN" = 1 ] && { report kept "$branch" "merged → would remove"; return 0; }
 
   # A branch like `fix/foo` leaves `<repo>/fix/` behind: remove such parents once empty, deepest first, but
@@ -162,9 +174,6 @@ clean_one() {
   local parents=() d
   d=$(dirname "$top")
   while [[ $d == "$WT_DIR"/*/* ]]; do parents+=("$d"); d=$(dirname "$d"); done
-  local ws=""
-  command -v herdr >/dev/null &&
-    ws=$(herdr worktree list --cwd "$main" 2>/dev/null | jq -r --arg p "$top" '.result.worktrees[] | select(.path == $p) | .open_workspace_id // empty')
   if [ -n "$ws" ]; then
     # Detached and delayed: the hook may run inside that workspace's own pane.
     setsid bash -c "sleep 2; herdr worktree remove --workspace '$ws' --force >/dev/null 2>&1 || git -C '$main' worktree remove --force '$top'; git -C '$main' branch -D '$branch' >/dev/null; rmdir $(printf '%q ' "${parents[@]}") 2>/dev/null; $(printf '%q' "$(realpath "$0")") close-main '$main'" </dev/null >/dev/null 2>&1 &

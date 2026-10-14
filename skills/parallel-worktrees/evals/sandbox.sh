@@ -59,7 +59,9 @@ case "\$1 \$2" in
   "worktree create")
     while [ \$# -gt 0 ]; do case \$1 in --cwd) c=\$2; shift 2 ;; --branch) b=\$2; shift 2 ;; --base) base=\$2; shift 2 ;; --path) p=\$2; shift 2 ;; *) shift ;; esac; done
     git -C "\$c" worktree add -q --no-track -b "\$b" "\$p" "\$base" >&2 && echo '{"result":{"root_pane":{"pane_id":"p-1"}}}' ;;
-  "worktree list") echo '{"result":{"worktrees":[]}}' ;;
+  "worktree list") cat "$S/herdr-worktrees.json" 2>/dev/null || echo '{"result":{"worktrees":[]}}' ;;
+  "agent list") cat "$S/herdr-agents.json" 2>/dev/null || echo '{"result":{"agents":[]}}' ;;
+  "worktree remove") exit 1 ;;   # makes wt fall back to git worktree remove, so the removal is visible
   *) echo '{"result":{}}' ;;
 esac
 STUB
@@ -89,6 +91,25 @@ case $id in
     echo "unsaved" > "$W/fix/dirty/notes.txt"
     new feat/empty
     ;;
+  5)
+    # Two handed-off tasks in acme/web, each with an agent in its own Herdr workspace: feat/search is finished
+    # (agent idle), feat/busy is already merged but its agent is still working.
+    echo "export HERDR_ENV=1" >> "$S/env.sh"
+    cd "$P/acme/web"
+    W=$P/acme/.worktrees/web
+    git_ worktree add -q --no-track -b feat/search "$W/feat/search" origin/main
+    echo "search" > "$W/feat/search/src/search.go"; git_ -C "$W/feat/search" add -A; git_ -C "$W/feat/search" commit -qm "feat: search"
+    git_ worktree add -q --no-track -b feat/busy "$W/feat/busy" origin/main
+    echo "busy" > "$W/feat/busy/src/busy.go"; git_ -C "$W/feat/busy" add -A; git_ -C "$W/feat/busy" commit -qm "feat: busy"
+    git_ -C "$W/feat/busy" push -q origin HEAD:main
+    cat > "$S/herdr-worktrees.json" <<JSON
+{"result":{"worktrees":[{"path":"$W/feat/search","open_workspace_id":"w-7"},{"path":"$W/feat/busy","open_workspace_id":"w-8"}]}}
+JSON
+    cat > "$S/herdr-agents.json" <<'JSON'
+{"result":{"agents":[{"name":"feat-search","agent":"claude","agent_status":"idle","workspace_id":"w-7","pane_id":"w-7:p1"},
+ {"name":"feat-busy","agent":"claude","agent_status":"working","workspace_id":"w-8","pane_id":"w-8:p1"}]}}
+JSON
+    ;;
 esac
 cd "$P"
-case $id in 1|2) echo "$P/acme/api" ;; *) echo "$P" ;; esac
+case $id in 1|2) echo "$P/acme/api" ;; 5) echo "$P/acme/web" ;; *) echo "$P" ;; esac
