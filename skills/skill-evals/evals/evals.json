@@ -1,0 +1,40 @@
+{
+  "skill_name": "skill-evals",
+  "evals": [
+    {
+      "id": 1,
+      "name": "add-evals",
+      "prompt": "I wrote a skill in commit-style/ for how our team writes commits. Add evals to it so I can see whether it actually changes what the agent does, and run them once. Don't change the skill itself.",
+      "expected_output": "Writes commit-style/evals/evals.json (skill-creator format, realistic prompts that don't state the rules, concrete checks against git state including negative ones) and an executable sandbox.sh with setup/state that builds a git repo with something to commit and prints the commit messages; runs every eval with and without the skill.",
+      "files": ["evals/sandbox.sh"],
+      "expectations": [
+        "state shows `evals.json format: true` (skill_name, and every eval has a numeric id, name, prompt and a non-empty expectations list)",
+        "There are at least 2 evals, aimed at different rules of the skill (for example the subject format, trailers, --no-verify, one change per commit)",
+        "No eval prompt states the rule it tests: none mentions the `area:` prefix, the 60-character limit, Co-Authored-By/trailers or --no-verify by name",
+        "commit-style/evals/sandbox.sh exists and is executable, and the `try: sandbox.sh setup` blocks in state show it prints an existing directory and writes env.sh for every eval id",
+        "The sandbox.sh state output shown in the `try:` blocks includes the commit message(s) or `git log`, which the checks depend on",
+        "Every expectation names something checkable in the transcript or the sandbox state (a commit subject, a trailer, a command, a file); none is a judgment like 'good', 'properly' or 'follows the style'",
+        "At least one expectation is negative (for example no Co-Authored-By trailer, no --no-verify in the transcript, web/ not in the api commit)",
+        "The claude log shows each eval run at least twice: once with commit-style offered as a skill (in `skills offered`, or its SKILL.md handed to the session some other way) and once without it",
+        "commit-style/SKILL.md is unchanged"
+      ]
+    },
+    {
+      "id": 2,
+      "name": "fix-weak-evals",
+      "prompt": "My commit-style skill has evals, but they pass 100% even without the skill (results are in evals-out/iteration-1), so they prove nothing. Fix the evals so they show whether the skill helps. No need to run them.",
+      "expected_output": "Explains that the prompt gives the rules away and the checks are vague; rewrites the prompt as a plain request, replaces the checks with concrete ones against the commit message (including negative ones), and makes sandbox.sh state print the commit message, which it did not.",
+      "files": ["evals/sandbox.sh"],
+      "expectations": [
+        "The final reply names both causes: the prompt spells out the rules (prefix, length, no Co-Authored-By) and the expectations are too vague to fail",
+        "The rewritten eval prompt(s) no longer mention the `api:` prefix, the 60-character limit or Co-Authored-By",
+        "The vague expectations ('is good and follows the commit style', 'handled the task properly') are gone, replaced by concrete ones about the commit (for example subject starts with `api: `, at most 60 characters, a single line, no Co-Authored-By trailer)",
+        "At least one expectation is negative (no trailer, no --no-verify, web/ untouched)",
+        "sandbox.sh state now prints the commit message or `git log` (the `sandbox.sh` block differs from `sandbox.sh before`, and a `try:` block shows the log)",
+        "state shows `evals.json format: true`",
+        "commit-style/SKILL.md is unchanged",
+        "The claude log is empty (`none`): no evals were run"
+      ]
+    }
+  ]
+}

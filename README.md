@@ -47,6 +47,14 @@ What it is, a screenshot, install and use on the first screen; only what GitHub 
 [SKILL.md](skills/github-readme/SKILL.md) · `/plugin install github-readme@dan4a-skills`
 </details>
 
+<details>
+<summary><picture><source media="(prefers-color-scheme: dark)" srcset="assets/skill-evals-dark.png"><img src="assets/skill-evals-light.png" width="772" alt="skill-evals: Evals for your own skills: concrete checks, a sandbox per run, with and without the skill."></picture></summary>
+
+Every skill here is tested this way, and this skill shares how: `evals.json` in skill-creator's format with checks that can be decided from the transcript and the end state, a `sandbox.sh` per skill (fake CLIs that log calls and remember what they created, bare git remotes, a home of its own), a bundled `run-evals` that runs each prompt with and without the skill in Claude Code, isolated from your settings, then grading and comparing the two.
+
+[SKILL.md](skills/skill-evals/SKILL.md) · `/plugin install skill-evals@dan4a-skills`
+</details>
+
 <!-- Cards are rendered from assets/src/cards.html by assets/src/render.sh. -->
 
 ## Install
@@ -66,6 +74,7 @@ Claude Code, as a plugin marketplace:
 /plugin install parallel-worktrees@dan4a-skills
 /plugin install herdr-tabs@dan4a-skills
 /plugin install github-readme@dan4a-skills
+/plugin install skill-evals@dan4a-skills
 ```
 
 Update an installed plugin with
@@ -87,6 +96,8 @@ Ask for what you want; the agent loads the skill when it fits:
 
 > Make this README look nicer and add a chart of the benchmark.
 
+> Add evals to my commit-style skill and run them with and without it.
+
 ## Evals
 
 Share of checks passed per skill, Claude Opus 5.5, one run per eval (2026-10-17). Each skill has two bars drawn over each other: the full one is with the skill, the inner one without.
@@ -94,10 +105,10 @@ Share of checks passed per skill, Claude Opus 5.5, one run per eval (2026-10-17)
 ```mermaid
 xychart-beta
   title "Checks passed, %: with the skill (back) and without (front)"
-  x-axis ["omarchy-plugin", "parallel-worktrees", "herdr-tabs", "github-readme"]
+  x-axis ["omarchy-plugin", "parallel-worktrees", "herdr-tabs", "github-readme", "skill-evals"]
   y-axis "%" 0 --> 100
-  bar [100, 100, 100, 100]
-  bar [56, 73, 21, 77]
+  bar [100, 100, 100, 100, 100]
+  bar [56, 73, 21, 77, 76]
 ```
 
 | Skill | With the skill | Without |
@@ -106,6 +117,7 @@ xychart-beta
 | `parallel-worktrees` 0.1.4 | 100% (30/30) | 73% (22/30) |
 | `herdr-tabs` 0.1.0 | 100% (14/14) | 21% (3/14) |
 | `github-readme` 0.1.0 | 100% (22/22) | 77% (17/22) |
+| `skill-evals` 0.1.0 | 100% (17/17) | 76% (13/17) |
 
 <details>
 <summary>How the evals work and how to run them</summary>
@@ -114,15 +126,16 @@ Every skill has evals in `skills/<name>/evals/`: `evals.json` (prompts and
 the checks a run must pass, in the
 [skill-creator](https://github.com/anthropics/skills/tree/main/skills/skill-creator)
 format) and `sandbox.sh`, which builds a throwaway home, repos or plugins for
-each prompt. `scripts/run-evals` runs every prompt with and without the skill
+each prompt. [skill-evals](skills/skill-evals/SKILL.md) explains how to write
+them and ships the runner, which runs every prompt with and without the skill
 in Claude Code, isolated from your own settings and files:
 
 ```bash
-MODEL=claude-opus-5-5 scripts/run-evals parallel-worktrees /tmp/evals/iteration-1
+MODEL=claude-opus-5-5 scripts/run-evals parallel-worktrees /tmp/evals/parallel-worktrees/iteration-1
 ```
 
-Then grade the runs against the expectations, for example with skill-creator's
-grader and benchmark viewer.
+(`scripts/run-evals` here is a shortcut for `skills/skill-evals/scripts/run-evals skills/<name> ...`.)
+Then grade the runs against the expectations, as skill-evals describes.
 </details>
 
 ## License

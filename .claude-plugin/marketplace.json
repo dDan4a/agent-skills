@@ -5,7 +5,7 @@
     "url": "https://github.com/dDan4a"
   },
   "metadata": {
-    "description": "Agent skills by dDan4a: Omarchy plugins, parallel agent sessions on git worktrees, Herdr tabs and GitHub READMEs."
+    "description": "Agent skills by dDan4a: Omarchy plugins, parallel agent sessions on git worktrees, Herdr tabs, GitHub READMEs and evals for your own skills."
   },
   "plugins": [
     {
@@ -46,6 +46,16 @@
       "license": "MIT",
       "keywords": ["github", "readme", "markdown", "mermaid", "documentation"],
       "skills": ["./skills/github-readme"],
+      "strict": false
+    },
+    {
+      "name": "skill-evals",
+      "source": "./",
+      "description": "Write and run evals for your own Agent Skills: concrete checks, a throwaway sandbox per run with fake CLIs and remotes, runs with and without the skill in Claude Code, grading and comparison.",
+      "version": "0.1.0",
+      "license": "MIT",
+      "keywords": ["evals", "skills", "testing", "claude-code", "benchmark"],
+      "skills": ["./skills/skill-evals"],
       "strict": false
     }
   ]

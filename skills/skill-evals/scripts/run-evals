@@ -1,0 +1,57 @@
+#!/usr/bin/env bash
+# Run a skill's evals with and without the skill, each in its own sandbox, with Claude Code.
+#   run-evals <skill dir> <out dir> [eval id...]     (<skill dir> has SKILL.md and evals/{evals.json,sandbox.sh})
+# Env: MODEL (default: the CLI's), JOBS (parallel runs, default 4), CONFIGS (default "with_skill without_skill").
+# Per run, <out>/eval-<id>-<name>/<config>/run-1/ (skill-creator's layout) gets transcript.{jsonl,md}, timing.json,
+# outputs/{final.md,state.txt} and sandbox/. Grade them against the eval's expectations (skill-creator's grader does this).
+#
+# Isolation: HOME is the sandbox's, only project settings load (no user CLAUDE.md, plugins or hooks), every Bash
+# command runs in Claude Code's sandbox with no way out (writes only inside the run's dir), edits outside it are refused.
+set -euo pipefail
+usage="usage: run-evals <skill dir> <out dir> [eval id...]"
+dir=$(realpath "${1:?$usage}") out=${2:?$usage}; shift 2
+evals=$dir/evals/evals.json
+[ -f "$dir/SKILL.md" ] && [ -f "$evals" ] && [ -x "$dir/evals/sandbox.sh" ] || { echo "$dir needs SKILL.md, evals/evals.json, executable evals/sandbox.sh" >&2; exit 1; }
+# Installed under its own name, as the agent would see it.
+skill=$(sed -n 's/^name: *//p' "$dir/SKILL.md" | head -1); skill=${skill:-$(basename "$dir")}
+mkdir -p "$out"; out=$(realpath "$out")
+ids=${*:-$(jq -r '.evals[].id' "$evals")}
+
+run() {
+  local id=$1 config=$2 name prompt R S cwd
+  name=$(jq -r --argjson i "$id" '.evals[] | select(.id == $i) | .name // "eval-\(.id)"' "$evals")
+  prompt=$(jq -r --argjson i "$id" '.evals[] | select(.id == $i) | .prompt' "$evals")
+  R=$out/eval-$id-$name/$config/run-1 S=$R/sandbox
+  rm -rf "$R"; mkdir -p "$R/outputs" "$S/home"
+  cwd=$("$dir/evals/sandbox.sh" setup "$S" "$id")
+  # Found as a project skill of the added directory, the way an installed skill is offered.
+  [ "$config" = with_skill ] && mkdir -p "$S/.claude/skills" && cp -r "$dir" "$S/.claude/skills/$skill" && rm -rf "$S/.claude/skills/$skill/evals"
+  jq -n --argjson i "$id" --arg n "$name" --arg p "$prompt" --slurpfile e "$evals" \
+    '{eval_id: $i, eval_name: $n, prompt: $p, assertions: ($e[0].evals[] | select(.id == $i) | .expectations)}' > "$out/eval-$id-$name/eval_metadata.json"
+  local t0=$SECONDS
+  # Not the parent session's: a run inside Herdr or Claude Code must not inherit them.
+  ( unset $(compgen -e | grep -E '^(HERDR_|CLAUDE)') && cd "$cwd" && . "$S/env.sh" && HOME=$S/home CLAUDE_CONFIG_DIR=$config_dir \
+      "$claude_bin" -p ${MODEL:+--model "$MODEL"} --setting-sources project --add-dir "$S" --permission-mode acceptEdits \
+      --settings '{"sandbox":{"enabled":true,"autoAllowBashIfSandboxed":true,"allowUnsandboxedCommands":false},"permissions":{"allow":["Bash"]}}' \
+      --output-format stream-json --verbose "$prompt" ) > "$R/transcript.jsonl" 2> "$R/stderr.txt" || true
+  jq -r 'select(.type == "result") | .result // ""' "$R/transcript.jsonl" > "$R/outputs/final.md"
+  jq -r 'if .type == "assistant" then .message.content[] |
+      if .type == "text" then "**assistant:** " + .text
+      elif .type == "tool_use" then "**" + .name + ":** `" + (.input.command // .input.file_path // .input.skill // (.input | tostring))[0:600] + "`"
+      else empty end
+    elif .type == "user" and (.message.content | type) == "array" then .message.content[] | select(.type == "tool_result") |
+      "> " + ((.content | if type == "array" then map(.text // "") | join("\n") else tostring end)[0:800] | gsub("\n"; "\n> "))
+    else empty end' "$R/transcript.jsonl" > "$R/transcript.md"
+  jq 'select(.type == "result") | {total_tokens: ((.usage.input_tokens // 0) + (.usage.output_tokens // 0)
+        + (.usage.cache_read_input_tokens // 0) + (.usage.cache_creation_input_tokens // 0)),
+      duration_ms, total_duration_seconds: (.duration_ms / 1000), total_cost_usd, num_turns}' "$R/transcript.jsonl" > "$R/timing.json"
+  "$dir/evals/sandbox.sh" state "$S" > "$R/outputs/state.txt" 2>&1 || true
+  echo "eval-$id-$name/$config: $((SECONDS - t0))s"
+}
+config_dir=${CLAUDE_CONFIG_DIR:-$HOME/.claude}
+# Resolved before env.sh: a sandbox may put a fake `claude` on PATH for the agent under test.
+claude_bin=$(command -v claude)
+export -f run; export out dir evals skill config_dir claude_bin
+
+for id in $ids; do for c in ${CONFIGS:-with_skill without_skill}; do echo "$id $c"; done; done |
+  xargs -P "${JOBS:-4}" -L 1 bash -c 'run "$0" "$1"'
