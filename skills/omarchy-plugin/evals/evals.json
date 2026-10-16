@@ -43,7 +43,7 @@
       "id": 3,
       "name": "marketplace-prep",
       "prompt": "I want to submit my Clipnote plugin (~/.config/omarchy/plugins/io.github.someone.clipnote, repo github.com/someone/clipnote, MIT licensed) to the Omarchy plugin marketplace. Get it ready and draft the submission issue for me.",
-      "expected_output": "Fixes what the bot and reviewers would flag (second manifest, license, install commands in README, token and note text in argv, sh -c with data, notes in /tmp, TextField replaced by LineEdit) and drafts the issue with the six headings without filing it.",
+      "expected_output": "Fixes what the bot and reviewers would flag (second manifest, license, install commands in README, token and note text in argv, sh -c with data, notes in /tmp, TextField replaced by LineEdit), gets a real screenshot as preview.png before submitting, and drafts the issue with the six headings without filing it.",
       "files": [
         "evals/sandbox.sh",
         "evals/files/clipnote/manifest.json",
@@ -61,6 +61,7 @@
         "No note text or other data is interpolated into an `sh -c` string (a fixed script reading stdin is fine) and notes are not written to /tmp; the notes file is private (0600, or in a 0700 directory)",
         "Saved notes are loaded back when the service starts, so a shell restart does not lose them",
         "The TextField is replaced by a LineEdit (template/LineEdit.qml) and no TextField/TextInput/TextEdit/TextArea remains; pasting happens only on Ctrl+V through wl-paste with a timeout and a size limit",
+        "The plugin has no preview, and the agent does not call it ready to submit without one: it asks the user to open the widget and panel for a real screenshot (or takes one with grim), and puts it as root preview.png and in the README, or lists the missing preview as blocking; it does not draw a mockup",
         "The final reply has a draft issue with the headings Repository URL, Category, Tags, Suggest a missing tag, Maintainer notes, Submission checklist in that order, a valid category, 1-3 valid tags and the checklist items checked",
         "The agent did not file the issue or push, and asks the user before publishing"
       ]

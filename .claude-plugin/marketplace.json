@@ -12,7 +12,7 @@
       "name": "omarchy-plugin",
       "source": "./",
       "description": "Write, debug and publish Omarchy shell plugins: manifest, services, bar widgets and panels across monitors, the UI kit, IPC, and the marketplace review.",
-      "version": "0.1.6",
+      "version": "0.1.7",
       "license": "MIT",
       "keywords": ["omarchy", "quickshell", "qml", "hyprland", "plugin"],
       "skills": ["./skills/omarchy-plugin"],

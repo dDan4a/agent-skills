@@ -12,8 +12,12 @@ submitting, since the rules change.
 - **Exactly one `manifest.json`.** A second one anywhere fails as
   `unsupported-repository-layout`.
 - **No symlinks.**
-- Optional root `preview.png` (or webp/jpg/avif), up to 50 MB and 40 MP. The
-  marketplace makes the card images itself.
+- **A root `preview.png`** (or `.jpg`/`.jpeg`/`.webp`/`.avif`), up to 50 MB
+  and 40 MP. The marketplace calls it optional, but without one the catalog
+  card has no image. It makes the card and detail images itself, so a normal
+  screenshot needs no resizing. Cards crop it to a wide box (`object-fit:
+  cover`, about 16:9): keep the widget near the center. How to take it:
+  step 8 of the Workflow in `SKILL.md`. Put the same image in the README.
 
 ## Submitting
 
@@ -128,6 +132,9 @@ installs, including your own: see "Companion CLI" in `SKILL.md`.
   the full 40-character SHA. It runs the same validation, baseline and
   approval; the old snapshot stays listed until then.
 - Batch changes into releases: every verified version is another review.
+- A preview forgotten at submission costs a commit, "Update unverified" and
+  another `verify-plugin.yml` round (dan4a.grafana-alerts, #11872). Add it
+  before submitting.
 
 ## Release checklist (update after listing)
 
@@ -163,4 +170,6 @@ installs, including your own: see "Companion CLI" in `SKILL.md`.
       user files read `O_NOFOLLOW|O_NONBLOCK`, fstat, `LimitReader`;
       restored files 0600; copied paths skip key/password locations, fail
       closed; pinned tag has every command the QML calls.
-- [ ] Optional `preview.png` of the real widget, no personal data in it.
+- [ ] Root `preview.png`: a real screenshot of the widget and its open panel
+      (demo or fake data), checked for personal data and shown to the user;
+      the same image in the README.
