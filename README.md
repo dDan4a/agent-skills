@@ -26,7 +26,7 @@ The manifest, services and bar widgets that work across several monitors, panels
 <details>
 <summary><picture><source media="(prefers-color-scheme: dark)" srcset="assets/parallel-worktrees-dark.png"><img src="assets/parallel-worktrees-light.png" width="772" alt="parallel-worktrees: Several agent sessions at once without collisions: one task = one branch = one git worktree = one session."></picture></summary>
 
-Comes with `wt`, a script that creates task worktrees, hands a task off to a new session (in Herdr) and removes worktrees once their branch is merged, including squash merges, from a Claude Code `SessionEnd` hook. In Herdr it also closes the repo's workspace after its last worktree.
+Comes with `wt`, a script that creates task worktrees, hands a task off to a new session (in Herdr) and removes worktrees once their branch is merged, including squash merges, from a Claude Code `SessionEnd` hook. In Herdr it also closes a merged child's idle session with its workspace, and the repo's workspace after its last worktree.
 
 [SKILL.md](skills/parallel-worktrees/SKILL.md) · `/plugin install parallel-worktrees@dan4a-skills`
 </details>
@@ -89,7 +89,7 @@ Ask for what you want; the agent loads the skill when it fits:
 
 ## Evals
 
-Share of checks passed per skill, Claude Opus 5.5. Each skill has two bars drawn over each other: the full one is with the skill, the inner one without.
+Share of checks passed per skill, Claude Opus 5.5, one run per eval (2026-10-17). Each skill has two bars drawn over each other: the full one is with the skill, the inner one without.
 
 ```mermaid
 xychart-beta
@@ -97,15 +97,15 @@ xychart-beta
   x-axis ["omarchy-plugin", "parallel-worktrees", "herdr-tabs", "github-readme"]
   y-axis "%" 0 --> 100
   bar [100, 100, 100, 100]
-  bar [64, 55, 43, 86]
+  bar [56, 73, 21, 77]
 ```
 
 | Skill | With the skill | Without |
 |---|---:|---:|
-| `omarchy-plugin` 0.1.2 | 100% | 64% |
-| `parallel-worktrees` 0.1.1 | 100% | 55% |
-| `herdr-tabs` 0.1.0 | 100% | 43% |
-| `github-readme` 0.1.0 | 100% | 86% |
+| `omarchy-plugin` 0.1.4 | 100% (32/32) | 56% (18/32) |
+| `parallel-worktrees` 0.1.4 | 100% (30/30) | 73% (22/30) |
+| `herdr-tabs` 0.1.0 | 100% (14/14) | 21% (3/14) |
+| `github-readme` 0.1.0 | 100% (22/22) | 77% (17/22) |
 
 <details>
 <summary>How the evals work and how to run them</summary>
