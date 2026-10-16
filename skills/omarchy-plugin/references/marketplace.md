@@ -1,6 +1,6 @@
 # Publishing to the Omarchy plugin marketplace
 
-Catalog: omarchyplugins.com. Repository: `omacom/omarchy-plugin-marketplace`;
+Catalog: plugins.omarchy.org (omarchyplugins.com redirects there). Repository: `omacom/omarchy-plugin-marketplace`;
 read its `SUBMISSION.md`, `VERIFICATION.md` and `SECURITY.md` before
 submitting, since the rules change.
 
@@ -16,8 +16,8 @@ submitting, since the rules change.
   and 40 MP. The marketplace calls it optional, but without one the catalog
   card has no image. It makes the card and detail images itself, so a normal
   screenshot needs no resizing. Cards crop it to a wide box (`object-fit:
-  cover`, about 16:9): keep the widget near the center. How to take it:
-  step 8 of the Workflow in `SKILL.md`. Put the same image in the README.
+  cover`, about 16:9): keep the widget near the center. How to make it and
+  the rest of the presentation: `presentation.md`.
 
 ## Submitting
 
@@ -170,6 +170,8 @@ installs, including your own: see "Companion CLI" in `SKILL.md`.
       user files read `O_NOFOLLOW|O_NONBLOCK`, fstat, `LimitReader`;
       restored files 0600; copied paths skip key/password locations, fail
       closed; pinned tag has every command the QML calls.
-- [ ] Root `preview.png`: a real screenshot of the widget and its open panel
-      (demo or fake data), checked for personal data and shown to the user;
-      the same image in the README.
+- [ ] Presentation done (`presentation.md`): panel text stays inside its
+      frame; root `preview.png` 1920x1080 from a real screenshot on demo
+      data, checked for personal data and shown to the user; README header
+      with badges and the preview; repo description and topics; tag
+      `vX.Y.Z` = manifest `version`; CI workflow with tests.

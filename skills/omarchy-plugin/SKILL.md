@@ -53,21 +53,12 @@ shell disagree, the shell wins: read the source under
    (`omarchy-shell shell toggle <id>` opens it on the focused monitor).
 7. **Clean up after experiments:** `omarchy plugin disable <id>`, remove the
    folder, `omarchy-shell shell rescanPlugins`.
-8. **Take the preview before publishing**, not after listing: a root
-   `preview.png` and the same image (or a GIF) in the README. A real
-   screenshot of the widget in the bar and its open panel, never a mockup.
-   Shoot it in the plugin's demo mode or with fake data if it has one; no
-   hosts, names, tokens or notifications in the frame.
-   - Do not send synthetic input: `wtype` and the like type into the focused
-     terminal. Enable the widget, ask the user to open the panel, then
-     capture the region yourself: `grim -g "<x>,<y> <w>x<h>" preview.png`.
-     The geometry comes from the panel's layer or window
-     (`hyprctl -j layers`, `hyprctl -j clients`) or from the user running
-     `slurp`.
-   - Show the user the image and check it for personal data yourself before
-     committing it.
-   - A wide crop (about 16:9) with the widget near the center looks best:
-     catalog cards cut the edges off.
+8. **Present it before publishing**, not after listing: check the panel
+   layout, a 1920x1080 `preview.png` from a real screenshot on demo data, a
+   README header with badges and the preview, repo topics, tags and CI. Follow
+   `references/presentation.md`. Open the panel yourself over IPC
+   (`omarchy-shell shell toggle <id>`), never with synthetic key presses.
+   Show the user the image and check it for personal data before committing.
 
 ## Several monitors: the rules
 
@@ -227,4 +218,7 @@ mod@vX.Y.Z`), reviewers read that code too, with the same rules, plus:
   singletons, keyboard conventions, the two widget + panel patterns
 - `references/marketplace.md`: submitting to the marketplace, the automated
   security baseline, labels, updates after listing, a pre-submission checklist
+- `references/presentation.md`: how the plugin looks when published: layout
+  check, the 1920x1080 preview, README header and badges, repo topics, tags,
+  CI; updated with each new lesson
 - `template/`: the working example plugin; `LineEdit.qml` is the text input to copy when a panel needs one
