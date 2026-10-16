@@ -82,8 +82,10 @@ repositories") or move the step-by-step to `docs/`.
 From real reviews, most frequent first:
 
 1. **Private data in process arguments**: tokens, prompts, diffs, notes,
-   message or notification text in argv (readable via `/proc/*/cmdline`).
-   Use stdin or a 0600 file.
+   message or notification text in argv (readable via `/proc/*/cmdline`),
+   API responses handed to a helper (`jq --argjson s "$resp"` leaked
+   private iCal URLs, #11872), data in notify-send (a printer job name,
+   #11143; env values, #10387, accepted with a direct D-Bus call). Use stdin, pipes or a 0600 file; see `SKILL.md`.
 2. **Too-open files**: state, logs, exports created 0644 under umask 022; an
    atomic rewrite that turns a 0600 file into 0644; private files in `/tmp`.
    Use 0700 dirs, 0600 files, keep the existing mode.
@@ -147,6 +149,13 @@ installs, including your own: see "Companion CLI" in `SKILL.md`.
 - [ ] Works on two monitors, from a hotkey, after `omarchy restart shell`,
       with the helper binary missing.
 - [ ] No private data in argv; files 0600 in 0700 dirs; no `/tmp` secrets.
+- [ ] Argv checked by running it, not by reading: put shims for every helper
+      (`curl`, `jq`, `grep`, `notify-send`, ...) first in `PATH`, each
+      `printf '%s\n' "$*" >> argv.log; exec /usr/bin/<tool> "$@"`; run the
+      scripts against a fake server whose responses contain a marker string;
+      `grep` the marker (and the token, hosts) in `argv.log`. Polling `ps` or
+      `/proc/*/cmdline` is not enough: it misses short-lived processes like
+      `jq`, and `grep` aliased to ugrep finds its own command line.
 - [ ] Nothing installed or changed without an explicit click; versions pinned.
 - [ ] No `sh -c` with interpolated data; outside text is `PlainText`.
 - [ ] No `TextField`/`TextInput`/`TextEdit`/`TextArea`; text input is `LineEdit`.

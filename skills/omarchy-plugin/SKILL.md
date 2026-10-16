@@ -99,11 +99,36 @@ destroyed at any time. A service is created once for the whole shell.
   `sh -c` string from data. If you need a shell, pass data as positional
   arguments: `["sh", "-c", 'tool "$1"', "sh", value]`.
 - **Private data never goes in argv.** Command lines are readable by every
-  local user (`/proc/<pid>/cmdline`). Prompts, diffs, notes, tokens, message
-  text, notification bodies with personal content: send them on stdin or in a
-  0600 file. This is the review finding raised most often. With curl, send
-  user text as `--data-binary @-` on stdin or `data-raw` in a `-K` config:
-  `-d`/`data` read a value starting with `@` as a file name to upload.
+  local user (`/proc/<pid>/cmdline`), and that includes every helper a script
+  starts. This is the review finding raised most often. Private means more
+  than tokens:
+  - API responses or any field of them passed to a helper:
+    `jq --arg/--argjson x "$resp"`, `grep "$x"`, `notify-send "$title" "$body"`;
+  - URLs (hosts, IDs, filters), request bodies (`curl -d '{...}'`), headers;
+  - prompts, diffs, notes, message text, notification bodies.
+
+  Pattern that passed review:
+  - curl reads everything from a `-K -` config on stdin
+    (`header = "Authorization: Bearer ..."`, `url = "..."`); the body comes
+    in through the process environment and a heredoc on fd 3
+    (`--data-binary @/dev/fd/3 3<<END`). Quickshell `Process.environment`
+    is added to the shell's environment (unless `clearEnvironment`), and a
+    process's environment is readable only by the same uid.
+  - Refuse a value written into a curl config if it has `"`, `\` or a
+    newline: server data could otherwise add options (`output = ...`).
+  - Responses travel only through pipes: `printf "%s" "$r" | jq ...` (printf
+    is a builtin). Combine several JSON documents with
+    `{ printf "%s" "$a"; printf "%s" "$b"; } | jq -s ...`, not `--argjson`.
+  - Drop private fields you do not need as early as possible:
+    `jq "[.results[] | {id, name}]"`.
+  - With curl, user text goes as `--data-binary`, never `-d`/`data`: they read
+    a value starting with `@` as a file name to upload.
+- **Notifications have no plugin API, and `notify-send` puts its text in
+  argv.** Reviewers reject alert names, job names or env values there. Notify
+  with a count only ("3 new alerts", the panel shows the rest), or make the
+  D-Bus call directly without a subprocess.
+- **Links from server data** (`generatorURL` and the like) open only if they
+  match `^https?://`, never `file://` or app schemes.
 - **Files: state dirs 0700, files 0600.** Atomic temp-and-rename writes must
   keep the destination's mode, not widen it to 0644. Keep private files out of
   shared `/tmp`; use `$XDG_RUNTIME_DIR` or `~/.local/state/<id>/`.

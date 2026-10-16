@@ -90,6 +90,29 @@
         "The final reply says to push the CLI's v0.3.0 tag (`cli/v0.3.0`, since the Go module is in cli/) before filing the verify-plugin.yml form with the full commit SHA, and the agent did not push, tag or file anything",
         "`go vet` passes in cli/ and `omarchy plugin validate` passes"
       ]
+    },
+    {
+      "id": 5,
+      "name": "argv-review",
+      "prompt": "Before I submit my On-call plugin (~/.config/omarchy/plugins/io.github.someone.oncall) to the Omarchy marketplace, review it for what the security reviewers will flag and fix it. The token is already kept out of argv.",
+      "expected_output": "Finds that API responses (schedules with private iCal URLs) reach jq's argv through --argjson, that the API URL is in argv and the on-call name in notify-send's argv, and that a server URL is opened unchecked; moves URLs into curl's stdin config with a quote/backslash/newline check, pipes responses into jq, drops unused private fields, notifies without names, opens only http(s) links, and checks argv by running the script with helper shims.",
+      "files": [
+        "evals/sandbox.sh",
+        "evals/files/oncall/manifest.json",
+        "evals/files/oncall/Service.qml",
+        "evals/files/oncall/BarWidget.qml",
+        "evals/files/oncall/README.md"
+      ],
+      "expectations": [
+        "The final reply names the `jq --argjson` of the schedules response as private data in argv, not only the token",
+        "No API response or field of one is passed as a process argument: responses reach jq through pipes (e.g. `printf \"%s\" \"$s\" | jq`, combined with `jq -s`), no `--arg`/`--argjson` carries response data",
+        "The API URL is not in any process's argv (curl gets `url = ...` in its `-K -` config on stdin, the value comes from the environment or stdin) and a value with `\"`, `\\` or a newline is refused before it is written to the config",
+        "The schedules are reduced to the fields the plugin uses (no ical_url_* kept), or the iCal URLs never leave the script",
+        "notify-send's argv has no on-call name (a generic or count-only text, or a direct D-Bus call)",
+        "A link from server data is opened only if it starts with http:// or https://",
+        "The reply shows or describes a run-time argv check (PATH shims logging \"$*\" for curl/jq/notify-send, a fake server with a marker in its responses, the marker grepped in the log) rather than only reading the code",
+        "`omarchy plugin validate` passes and the agent did not push or file anything"
+      ]
     }
   ]
 }

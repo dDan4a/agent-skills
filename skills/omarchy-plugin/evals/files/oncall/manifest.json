@@ -1,0 +1,12 @@
+{
+  "schemaVersion": 1,
+  "id": "io.github.someone.oncall",
+  "name": "On-call",
+  "version": "0.1.0",
+  "author": "someone",
+  "license": "MIT",
+  "description": "Who is on call now, from the Grafana OnCall API.",
+  "kinds": ["service", "bar-widget"],
+  "entryPoints": { "service": "Service.qml", "barWidget": "BarWidget.qml" },
+  "barWidget": { "displayName": "On-call", "category": "Productivity", "defaultSection": "right" }
+}

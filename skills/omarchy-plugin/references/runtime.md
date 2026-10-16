@@ -115,5 +115,6 @@ Process {
   "--app-id=org.omarchy.terminal", "--title=...", "-e", "bash", "-c", script]`.
 - Missing binary vs failure: `["sh", "-c", 'command -v "$0" >/dev/null || exit 127; exec "$0" "$@"', tool, args...]`.
 - Notifications: `notify-send -a "Your App" -- summary body` puts the text in
-  argv. Fine for generic text ("3 updates"); personal content belongs in a
-  D-Bus call made from a helper that reads it from stdin.
+  argv. Fine for generic text ("3 updates"); anything from data (names,
+  titles, env values) was rejected. Count only, or call D-Bus directly
+  without a subprocess.
