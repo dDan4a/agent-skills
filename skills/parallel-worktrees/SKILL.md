@@ -73,7 +73,9 @@ When you merge a handed-off branch from the main checkout, run
 `wt clean <worktree path>` (or `wt sync <group>`) right after the push: it
 removes the worktree and its Herdr workspace, and with it the child session,
 which would otherwise sit idle. Do not `/exit` children by hand. A workspace
-whose agent is still `working` or `blocked` is kept and reported.
+whose agent is still `working` or `blocked` is kept and reported. If `wt`
+reports that removing failed, tell the user; do not remove the worktree,
+branch or workspace by hand.
 
 Without Herdr, `--agent` is refused: create the worktree and tell the user to
 open a new session in the printed path, with the brief in your reply.

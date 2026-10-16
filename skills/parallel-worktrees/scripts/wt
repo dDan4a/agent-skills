@@ -174,12 +174,14 @@ clean_one() {
   local parents=() d
   d=$(dirname "$top")
   while [[ $d == "$WT_DIR"/*/* ]]; do parents+=("$d"); d=$(dirname "$d"); done
-  if [ -n "$ws" ]; then
-    # Detached and delayed: the hook may run inside that workspace's own pane.
+  if [ -n "$ws" ] && [ "$ws" = "${HERDR_WORKSPACE_ID:-}" ]; then
+    # Detached and delayed: the caller (the SessionEnd hook) runs inside that workspace's own pane.
     setsid bash -c "sleep 2; herdr worktree remove --workspace '$ws' --force >/dev/null 2>&1 || git -C '$main' worktree remove --force '$top'; git -C '$main' branch -D '$branch' >/dev/null; rmdir $(printf '%q ' "${parents[@]}") 2>/dev/null; $(printf '%q' "$(realpath "$0")") close-main '$main'" </dev/null >/dev/null 2>&1 &
   else
     # -D: a squash-merged branch is not an ancestor, but the checks above showed it is merged.
-    git -C "$main" worktree remove --force "$top" && git -C "$main" branch -D "$branch" >/dev/null
+    { [ -n "$ws" ] && herdr worktree remove --workspace "$ws" --force >/dev/null 2>&1; } || git -C "$main" worktree remove --force "$top" ||
+      { report kept "$branch" "merged, removing the worktree failed"; return 0; }
+    git -C "$main" branch -D "$branch" >/dev/null
     [ ${#parents[@]} -gt 0 ] && rmdir "${parents[@]}" 2>/dev/null
     close_main_ws "$main"
   fi

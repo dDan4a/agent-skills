@@ -112,4 +112,6 @@ JSON
     ;;
 esac
 cd "$P"
-case $id in 1|2) echo "$P/acme/api" ;; 5) echo "$P/acme/web" ;; *) echo "$P" ;; esac
+# Eval 5 starts in the group, not in acme/web: Claude Code's sandbox mounts over the cwd repo's .git, so removing
+# .git/worktrees/<name> there fails with "Device or resource busy".
+case $id in 1|2) echo "$P/acme/api" ;; 5) echo "$P/acme" ;; *) echo "$P" ;; esac
