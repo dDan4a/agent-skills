@@ -102,7 +102,7 @@ xychart-beta
 
 | Skill | With the skill | Without |
 |---|---:|---:|
-| `omarchy-plugin` 0.1.4 | 100% (32/32) | 56% (18/32) |
+| `omarchy-plugin` 0.1.5 | 100% (32/32) | 56% (18/32) |
 | `parallel-worktrees` 0.1.4 | 100% (30/30) | 73% (22/30) |
 | `herdr-tabs` 0.1.0 | 100% (14/14) | 21% (3/14) |
 | `github-readme` 0.1.0 | 100% (22/22) | 77% (17/22) |
