@@ -103,7 +103,11 @@ cmd_new() {
   local name
   name=$(tr 'A-Z' 'a-z' <<<"$branch" | sed 's/[^a-z0-9_-]/-/g; s/^[^a-z]*//' | cut -c1-32)
   local args=()
-  [ -n "$role" ] && args=(-- --agent "$role" --permission-mode auto)
+  # Factory roles never push or touch PRs: agent-desk does that. Each rule twice, as the rtk hook rewrites
+  # `git push` to `rtk git push` before the permission check and a plain rule does not match it.
+  local banned=() cmd
+  for cmd in "git push" "gh pr create" "gh pr merge" "gh pr ready"; do banned+=("Bash($cmd *)" "Bash(rtk $cmd *)"); done
+  [ -n "$role" ] && args=(-- --agent "$role" --permission-mode auto --disallowedTools "${banned[@]}")
   herdr agent start "${name:-task}" --kind "$agent" --pane "$pane" "${args[@]}" >/dev/null || { say "agent did not start in $pane"; exit 1; }
   # The brief goes inline: a file outside the worktree would cost the new session a permission prompt.
   local prompt="You are continuing task $branch in its own git worktree ($dst), handed off from another session."

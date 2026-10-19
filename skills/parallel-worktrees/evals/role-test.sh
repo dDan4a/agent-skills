@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# `wt new --role` in the eval sandbox: the stub herdr must see `-- --agent <role> --permission-mode auto`, and nothing
-# extra without --role. Run: bash evals/role-test.sh
+# `wt new --role` in the eval sandbox: the stub herdr must see `-- --agent <role> --permission-mode auto` plus the push/PR
+# ban, and nothing extra without --role. Run: bash evals/role-test.sh
 set -euo pipefail
 here=$(dirname "$(realpath "$0")")
 S=$(mktemp -d); trap 'rm -rf "$S"' EXIT
@@ -12,7 +12,9 @@ start() { grep '^herdr agent start' "$S/herdr.log" | tail -1; }
 wt new acme/api feat/plain --agent claude </dev/null >/dev/null 2>&1
 [ "$(start)" = "herdr agent start feat-plain --kind claude --pane p-1" ] || fail "without --role: $(start)"
 wt new acme/api feat/role --agent claude --role implementer </dev/null >/dev/null 2>&1
-[ "$(start)" = "herdr agent start feat-role --kind claude --pane p-1 -- --agent implementer --permission-mode auto" ] ||
+ban="--disallowedTools Bash(git push *) Bash(rtk git push *) Bash(gh pr create *) Bash(rtk gh pr create *)"
+ban+=" Bash(gh pr merge *) Bash(rtk gh pr merge *) Bash(gh pr ready *) Bash(rtk gh pr ready *)"
+[ "$(start)" = "herdr agent start feat-role --kind claude --pane p-1 -- --agent implementer --permission-mode auto $ban" ] ||
   fail "with --role: $(start)"
 for bad in "--role Bad_Name --agent claude" "--role implementer" "--role implementer --agent codex"; do
   # shellcheck disable=SC2086
