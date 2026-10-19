@@ -140,7 +140,8 @@ clean_one() {
   local top branch main base
   top=$(git -C "$dst" rev-parse --show-toplevel 2>/dev/null) || return 0
   branch=$(git -C "$top" branch --show-current)
-  [ -n "$branch" ] || return 0
+  # A detached HEAD hides which branch the work belongs to (and commits made there may be on no branch): say so.
+  [ -n "$branch" ] || { report kept "${top#"$WT_DIR"/}" "detached HEAD at $(git -C "$top" rev-parse --short HEAD), switch to its branch"; return 0; }
   main=$(dirname "$(git -C "$top" rev-parse --path-format=absolute --git-common-dir)")
   base=$(base_of "$main")
   [ -n "$base" ] || return 0

@@ -72,7 +72,10 @@ brief is the new session's only context: write it so a stranger could
 continue. After the handoff, do not touch that task's code
 from this session.
 
-When you merge a handed-off branch from the main checkout, run
+Merge a PR with `gh pr merge <n> --match-head-commit "$(git -C <worktree> rev-parse HEAD)"`:
+the forge refuses when the PR head is not the worktree's HEAD, so a commit
+that was never pushed is not left behind. When you merge a handed-off branch
+from the main checkout, run
 `wt clean <worktree path>` (or `wt sync <group>`) right after the push: it
 removes the worktree and its Herdr workspace, and with it the child session,
 which would otherwise sit idle. Do not `/exit` children by hand. A workspace
