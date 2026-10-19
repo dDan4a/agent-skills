@@ -65,8 +65,10 @@ BRIEF
 
 This creates the worktree in a Herdr workspace, starts the agent there
 (`claude` or `codex`; add `--focus` to switch to it) and sends the brief as
-its first message. The brief is the new session's only context: write it so
-a stranger could continue. After the handoff, do not touch that task's code
+its first message. `--role <name>` (Claude only) starts it as
+`claude --agent <name>`, with the role file `.claude/agents/<name>.md`. The
+brief is the new session's only context: write it so a stranger could
+continue. After the handoff, do not touch that task's code
 from this session.
 
 When you merge a handed-off branch from the main checkout, run

@@ -2,10 +2,11 @@
 # Task worktrees for every project under $WT_ROOT (default ~/projects, laid out as <group>/<repo>): one git
 # worktree per task, so parallel agent sessions never share a checkout. Removed once the branch is merged.
 #
-#   wt new <repo> <branch> [--agent claude|codex] [--brief FILE|-] [--focus]
+#   wt new <repo> <branch> [--agent claude|codex] [--role NAME] [--brief FILE|-] [--focus]
 #                            create <group>/.worktrees/<repo>/<branch> from the repo's base branch;
 #                            <repo> is <group>/<repo>, or just <repo> when run inside the group;
 #                            --agent starts a new agent session there (Herdr only) and hands it the brief
+#                            --role runs that Claude session as `claude --agent NAME` (.claude/agents/NAME.md)
 #                            WT_GROUP=<group> picks the group when run outside it
 #   wt clean [path]          remove that worktree if its branch is merged
 #   wt clean --all [group]   same for every task worktree (of one group)
@@ -54,15 +55,21 @@ group_of() { local rel=${1#"$ROOT"/}; [ "$rel" != "$1" ] && echo "${rel%%/*}"; }
 
 cmd_new() {
   local spec=${1:?usage: wt new <repo> <branch>} branch=${2:?usage: wt new <repo> <branch>}; shift 2
-  local agent="" brief="" focus=--no-focus
+  local agent="" role="" brief="" focus=--no-focus
   while [ $# -gt 0 ]; do
     case $1 in
       --agent) agent=${2:?--agent needs claude or codex}; shift 2 ;;
+      --role) role=${2:?--role needs a name}; shift 2 ;;
       --brief) brief=${2:?--brief needs a file or -}; shift 2 ;;
       --focus) focus=--focus; shift ;;
       *) say "unknown option $1"; exit 1 ;;
     esac
   done
+  if [ -n "$role" ]; then
+    [[ $role =~ ^[a-z][a-z0-9-]*$ ]] || { say "bad role name '$role': lowercase letters, digits and '-', starting with a letter"; exit 1; }
+    [ -n "$agent" ] || { say "--role needs --agent claude"; exit 1; }
+    [ "$agent" = claude ] || { say "roles are Claude Code only (--agent claude)"; exit 1; }
+  fi
   local group repo
   if [[ $spec == */* ]]; then group=${spec%%/*} repo=${spec#*/}
   else group=${WT_GROUP:-$(group_of "$(realpath "$PWD")")} repo=$spec; fi
@@ -95,7 +102,9 @@ cmd_new() {
   # Herdr agent names: lowercase letters, digits, '-', '_', starting with a letter, max 32.
   local name
   name=$(tr 'A-Z' 'a-z' <<<"$branch" | sed 's/[^a-z0-9_-]/-/g; s/^[^a-z]*//' | cut -c1-32)
-  herdr agent start "${name:-task}" --kind "$agent" --pane "$pane" >/dev/null || { say "agent did not start in $pane"; exit 1; }
+  local args=()
+  [ -n "$role" ] && args=(-- --agent "$role" --permission-mode auto)
+  herdr agent start "${name:-task}" --kind "$agent" --pane "$pane" "${args[@]}" >/dev/null || { say "agent did not start in $pane"; exit 1; }
   # The brief goes inline: a file outside the worktree would cost the new session a permission prompt.
   local prompt="You are continuing task $branch in its own git worktree ($dst), handed off from another session."
   [ -n "$text" ] && prompt=$(printf '%s Handoff brief:\n\n%s' "$prompt" "$text")
