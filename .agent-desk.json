@@ -1,0 +1,23 @@
+{
+  "factory": "tooling",
+  "gates": [
+    {"name": "frontmatter", "run": "scripts/check-skills"},
+    {"name": "version-bump", "run": "scripts/check-version-bump \"$BASE\""},
+    {"name": "checks", "run": "scripts/test-checks"},
+    {
+      "name": "sandbox",
+      "run": "for s in $(git diff --name-only \"$BASE\"...HEAD -- skills/ | cut -d/ -f2 | sort -u); do d=skills/$s/evals; [ -x \"$d/sandbox.sh\" ] || continue; for id in $(jq -r '.evals[].id' \"$d/evals.json\"); do t=$(mktemp -d); \"$d/sandbox.sh\" setup \"$t/sandbox\" \"$id\" >/dev/null; rc=$?; rm -rf \"$t\"; [ $rc = 0 ] || { echo \"$s eval $id: sandbox.sh setup failed (exit $rc)\"; exit 1; }; done; done"
+    }
+  ],
+  "protected": [
+    "skills/github-readme/evals/",
+    "skills/herdr-tabs/evals/",
+    "skills/omarchy-plugin/evals/",
+    "skills/parallel-worktrees/evals/",
+    "skills/skill-evals/evals/",
+    "scripts/",
+    ".agent-desk.json"
+  ],
+  "guard": ["\"expectations\""],
+  "qa": "evals-runner"
+}
