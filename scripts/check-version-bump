@@ -1,0 +1,21 @@
+#!/usr/bin/env bash
+# A plugin whose skills changed in <base>...HEAD must change its version in .claude-plugin/marketplace.json.
+#   check-version-bump <base ref>      (run anywhere inside the repo; exits 1 naming each plugin without a bump)
+set -euo pipefail
+base=${1:?usage: check-version-bump <base ref>}
+cd "$(git rev-parse --show-toplevel)"
+git rev-parse -q --verify "$base^{commit}" >/dev/null || { echo "check-version-bump: unknown ref $base" >&2; exit 2; }
+m=.claude-plugin/marketplace.json
+old=$(git show "$base:$m" 2>/dev/null || echo '{"plugins":[]}')
+fail=0
+while IFS=$'\t' read -r name version paths; do
+  read -ra paths <<< "$paths"
+  [ ${#paths[@]} -gt 0 ] || continue
+  git diff --quiet "$base...HEAD" -- "${paths[@]}" && continue
+  was=$(jq -r --arg n "$name" '.plugins[] | select(.name == $n) | .version' <<< "$old")
+  if [ -n "$was" ] && [ "$was" = "$version" ]; then
+    echo "$name: ${paths[*]} changed since $base but version is still $version (bump it in $m)"
+    fail=1
+  fi
+done < <(jq -r '.plugins[] | [.name, .version, (.skills // [] | join(" "))] | @tsv' "$m")
+exit $fail

@@ -1,0 +1,70 @@
+#!/usr/bin/env bash
+# Tests for check-skills and check-version-bump on fixture repos in a temp dir. Exits 1 if any case fails.
+set -uo pipefail
+here=$(dirname "$(realpath "$0")")
+T=$(mktemp -d)
+trap 'rm -rf "$T"' EXIT
+failed=0
+
+expect() { # expect <exit code> <case name> <command...>
+  local want=$1 name=$2 out got
+  shift 2
+  out=$("$@" 2>&1)
+  got=$?
+  if [ "$got" = "$want" ]; then echo "ok   $name"; else echo "FAIL $name: exit $got, want $want"; sed 's/^/     /' <<< "$out"; failed=1; fi
+}
+
+skill() { # skill <repo> <name> <frontmatter lines> [body]
+  mkdir -p "$1/skills/$2/references"
+  printf -- '---\n%s\n---\n\n%s\n' "$3" "${4:-Body.}" > "$1/skills/$2/SKILL.md"
+}
+
+good() { skill "$1" good 'name: good
+description: Use when testing the checks.' 'See [setup](references/setup.md#top), `scripts/run`, https://example.com and [web](https://example.com).'
+  mkdir -p "$1/skills/good/scripts"; touch "$1/skills/good/references/setup.md" "$1/skills/good/scripts/run"; }
+
+# check-skills
+r=$T/good; good "$r"
+expect 0 "check-skills: good skill" "$here/check-skills" "$r"
+
+r=$T/nodesc; good "$r"; skill "$r" nodesc 'name: nodesc'
+expect 1 "check-skills: missing description" "$here/check-skills" "$r"
+
+r=$T/longdesc; skill "$r" longdesc "name: longdesc
+description: $(printf 'x%.0s' {1..1025})"
+expect 1 "check-skills: description over 1024 chars" "$here/check-skills" "$r"
+
+r=$T/badname; skill "$r" badname 'name: other
+description: Use when testing.'
+expect 1 "check-skills: name differs from directory" "$here/check-skills" "$r"
+
+r=$T/link; skill "$r" link 'name: link
+description: Use when testing.' 'Read [this](references/missing.md).'
+expect 1 "check-skills: broken relative link" "$here/check-skills" "$r"
+
+r=$T/path; skill "$r" path 'name: path
+description: Use when testing.' 'Run `scripts/missing.sh` first.'
+expect 1 "check-skills: missing scripts/ path" "$here/check-skills" "$r"
+
+r=$T/nofm; mkdir -p "$r/skills/nofm"; echo 'No frontmatter.' > "$r/skills/nofm/SKILL.md"
+expect 1 "check-skills: no frontmatter" "$here/check-skills" "$r"
+
+# check-version-bump
+r=$T/bump; good "$r"; mkdir -p "$r/.claude-plugin" "$r/other"
+market() { echo "{\"plugins\":[{\"name\":\"good\",\"version\":\"$1\",\"skills\":[\"./skills/good\"]}]}" > "$r/.claude-plugin/marketplace.json"; }
+g() { git -C "$r" -c user.name=t -c user.email=t@t "$@"; }
+market 0.1.0; g init -q -b main; g add -A; g commit -qm base; g tag base
+vb() { (cd "$r" && "$here/check-version-bump" base); }
+
+echo x > "$r/other/file"; g add -A; g commit -qm other
+expect 0 "check-version-bump: no skill changed" vb
+
+echo more >> "$r/skills/good/SKILL.md"; g add -A; g commit -qm change
+expect 1 "check-version-bump: skill changed without a bump" vb
+
+market 0.1.1; g add -A; g commit -qm bump
+expect 0 "check-version-bump: skill changed with a bump" vb
+
+expect 2 "check-version-bump: unknown base ref" bash -c "cd '$r' && '$here/check-version-bump' nope"
+
+exit $failed

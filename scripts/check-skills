@@ -1,0 +1,67 @@
+#!/usr/bin/env python3
+# Check every skills/*/SKILL.md: frontmatter name (= directory) and description (non-empty, <= 1024 chars),
+# relative links and scripts/... or references/... paths it mentions exist. Prints "file: problem", exits 1 on any.
+#   check-skills [repo dir]   (default: the repo this script is in)
+import re
+import sys
+from pathlib import Path
+
+root = Path(sys.argv[1] if len(sys.argv) > 1 else Path(__file__).resolve().parent.parent)
+problems = []
+
+
+def frontmatter(text):
+    lines = text.split("\n")
+    if lines[0].strip() != "---":
+        return None
+    fields, key = {}, None
+    for line in lines[1:]:
+        if line.strip() == "---":
+            return fields
+        m = re.match(r"^([A-Za-z_][\w-]*):\s*(.*)$", line)
+        if m:
+            key = m.group(1)
+            fields[key] = m.group(2).strip()
+        elif key and line.startswith((" ", "\t")):  # continuation of a multi-line value
+            fields[key] = (fields[key] + " " + line.strip()).strip()
+    return None
+
+
+def unquote(value):
+    value = re.sub(r"^[>|][+-]?\s*", "", value)  # block scalar indicator
+    if len(value) >= 2 and value[0] == value[-1] and value[0] in "'\"":
+        value = value[1:-1]
+    return value
+
+
+skills = sorted(root.glob("skills/*/SKILL.md"))
+if not skills:
+    problems.append(f"{root}/skills: no skills/*/SKILL.md")
+for path in skills:
+    rel, skill_dir = path.relative_to(root), path.parent
+    text = path.read_text()
+    fm = frontmatter(text)
+    if fm is None:
+        problems.append(f"{rel}: no frontmatter (--- ... --- at the top)")
+        fm = {}
+    name, desc = unquote(fm.get("name", "")), unquote(fm.get("description", ""))
+    if fm and name != skill_dir.name:
+        problems.append(f"{rel}: name {name!r} must equal the directory {skill_dir.name!r}")
+    if fm and not desc:
+        problems.append(f"{rel}: description is missing or empty")
+    elif len(desc) > 1024:
+        problems.append(f"{rel}: description is {len(desc)} chars, max 1024")
+
+    refs = set()
+    for target in re.findall(r"\]\(([^)\s]+)", text):  # markdown links
+        target = target.split("#")[0]
+        if target and not re.match(r"^[a-z][a-z0-9+.-]*:", target) and not target.startswith("/"):
+            refs.add(target)
+    refs.update(re.findall(r"(?<![\w/.$~-])(?:scripts|references)/[\w./-]*\w", text))
+    for ref in sorted(refs):
+        if not (skill_dir / ref).exists():
+            problems.append(f"{rel}: {ref} does not exist")
+
+if problems:
+    print("\n".join(problems))
+sys.exit(1 if problems else 0)
