@@ -9,6 +9,9 @@
 #                            under $WT_ROOT
 #                            --agent starts a new agent session there (Herdr only) and hands it the brief
 #                            --role runs that Claude session as `claude --agent NAME` (.claude/agents/NAME.md)
+#   wt fan <repo> <branch> -n N [--agent claude,codex] [--brief FILE|-]
+#                            one task in N worktrees <branch>-1..N, each like `wt new` with the same brief, the
+#                            agents taken in turn from the list; prints how to compare the diffs and pick one
 #   wt clean [path]          remove that worktree if its branch is merged
 #   wt clean --all [dir]     same for every task worktree of the project
 #   wt sync [dir] [--dry-run]
@@ -157,6 +160,52 @@ cmd_new() {
   [ -n "$text" ] && prompt=$(printf '%s Handoff brief:\n\n%s' "$prompt" "$text")
   herdr agent prompt "${name:-task}" "$prompt" >/dev/null || say "agent started but the prompt was not delivered"
   say "agent '${name:-task}' started in Herdr pane $pane"
+}
+
+cmd_fan() {
+  local spec=${1:?usage: wt fan <repo> <branch> -n N} branch=${2:?usage: wt fan <repo> <branch> -n N}; shift 2
+  local n="" agents="" brief="" a
+  while [ $# -gt 0 ]; do
+    case $1 in
+      -n) n=${2:?-n needs a number}; shift 2 ;;
+      --agent) agents=${2:?--agent needs claude, codex or a list like claude,codex}; shift 2 ;;
+      --brief) brief=${2:?--brief needs a file or -}; shift 2 ;;
+      *) say "unknown option $1"; exit 1 ;;
+    esac
+  done
+  [[ $n =~ ^[0-9]+$ ]] && [ "$n" -ge 2 ] || { say "-n needs the number of worktrees, 2 or more"; exit 1; }
+  # Checked before the first worktree, so bad input leaves no partial fan behind.
+  local list=(); IFS=, read -ra list <<<"$agents"
+  for a in ${list[@]+"${list[@]}"}; do
+    case $a in claude|codex) ;; *) say "unknown agent '$a': claude or codex"; exit 1 ;; esac
+  done
+  if [ -n "$agents" ]; then
+    [ "${HERDR_ENV:-}" = 1 ] || { say "--agent needs Herdr (HERDR_ENV=1)"; exit 1; }
+    # Herdr cuts agent names at 32 characters, which would cut off the -N that tells them apart.
+    [ $((${#branch} + 1 + ${#n})) -le 32 ] || { say "branch name too long for Herdr agent names: keep '$branch-$n' within 32"; exit 1; }
+  fi
+  local src
+  src=$(repo_dir "$spec") || { say "no repo '$spec': give its path (. inside it), a repo next to this one or <group>/<repo> under \$WT_ROOT"; exit 1; }
+  load_repo "$src"
+  local base; base=$(base_of "$src")
+  # Read stdin once: every worktree gets the same brief.
+  local tmp=""
+  [ "$brief" = - ] && { tmp=$(mktemp); cat >"$tmp"; brief=$tmp; }
+  local i args
+  for ((i = 1; i <= n; i++)); do
+    args=()
+    [ -n "$agents" ] && args+=(--agent "${list[(i - 1) % ${#list[@]}]}")
+    [ -n "$brief" ] && args+=(--brief "$brief")
+    (cmd_new "$spec" "$branch-$i" ${args[@]+"${args[@]}"}) || { [ -n "$tmp" ] && rm -f "$tmp"; exit 1; }
+  done
+  [ -n "$tmp" ] && rm -f "$tmp"
+  {
+    echo "wt: $n worktrees for one task. When they are done, compare the diffs:"
+    for ((i = 1; i <= n; i++)); do echo "  git -C $src diff $REMOTE/$base...$branch-$i"; done
+    echo "  Pick one: does it do what the brief asks, do tests pass, is the diff the smallest and clearest, any unasked changes?"
+    echo "  Say which is best and why, merge it as usual. The others are never merged, so wt keeps them: close their Herdr"
+    echo "  workspaces, then git -C $src worktree remove --force <path> && git -C $src branch -D <branch>."
+  } >&2
 }
 
 # removed|skipped|kept <branch> <detail>: a line in `wt sync`, a desktop notification otherwise.
@@ -343,9 +392,10 @@ cmd_sync() {
 case ${1:-} in
   sync)  shift; cmd_sync "$@" ;;
   new)   shift; cmd_new "$@" ;;
+  fan)   shift; cmd_fan "$@" ;;
   clean) shift; cmd_clean "$@" ;;
   list)  shift; cmd_list "$@" ;;
   hook)  cmd_hook; exit 0 ;;
   close-main) close_main_ws "$2" ;;   # internal: the delayed Herdr removal calls it after the worktree is gone
-  *)     sed -n '2,32p' "$0"; [ $# -eq 0 ] ;;   # bare `wt` is help, not an error
+  *)     sed -n '2,35p' "$0"; [ $# -eq 0 ] ;;   # bare `wt` is help, not an error
 esac
