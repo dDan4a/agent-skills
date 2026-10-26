@@ -1,6 +1,6 @@
 ---
 name: parallel-worktrees
-description: Run several coding-agent sessions at once without them stepping on each other - one task = one branch = one git worktree = one session, created with the bundled `wt` script and removed automatically once the branch is merged (merge or squash). Use when starting a task in a repo that other sessions may also be working in, handing a task off to a new agent session, setting up task worktrees for a group of repos, cleaning up merged worktrees, or when the user mentions `wt`, worktrees, parallel sessions or handoff.
+description: Run several coding-agent sessions at once without them stepping on each other - one task = one branch = one git worktree = one session, created with the bundled `wt` script and removed automatically once the branch is merged (merge or squash). Use when starting a task in a repo that other sessions may also be working in, handing a task off to a new agent session, setting up task worktrees for a repo or a project of several repos, cleaning up merged worktrees, or when the user mentions `wt`, worktrees, parallel sessions or handoff.
 license: MIT
 ---
 
@@ -14,15 +14,15 @@ exactly one session works there.
 ## Layout
 
 ```
-$WT_ROOT/                       # default ~/projects
-  <group>/                      # one per client or kind of work
-    .wt.conf                    # optional group settings (bash), see references/setup.md
-    <repo>/                     # main checkout, stays on the default branch
-    .worktrees/<repo>/<branch>/ # one task worktree per branch, e.g. .worktrees/api/fix/login
+<project>/                      # any folder; one per client or kind of work
+  <repo>/                       # main checkout, stays on the default branch
+    .wt.conf                    # optional repo settings (bash, committed), see references/setup.md
+  .worktrees/<repo>/<branch>/   # one task worktree per branch, e.g. .worktrees/api/fix/login
 ```
 
-`wt` is `scripts/wt` in this skill. If it is not on `PATH`, see
-`references/setup.md` (install, the SessionEnd hook, group settings).
+Task worktrees live next to the repo, wherever it is cloned; nothing else is
+needed. `wt` is `scripts/wt` in this skill. If it is not on `PATH`, see
+`references/setup.md` (install, the SessionEnd hook, repo settings).
 
 ## Rules
 
@@ -32,10 +32,10 @@ $WT_ROOT/                       # default ~/projects
   release there when the user asks; do task work in a worktree.
 - **Start a task with `wt new`**, not `git worktree add` or the agent's own
   worktree feature: `wt` puts the worktree where cleanup finds it and links
-  the untracked files the group needs.
+  the untracked files the repo's `.wt.conf` lists.
   ```bash
-  wt new <group>/<repo> <branch>   # prints the worktree path; then work there
-  wt new <repo> <branch>           # same, when run inside <group>/
+  wt new . <branch>                # inside the repo; prints the worktree path, then work there
+  wt new <path-or-repo> <branch>   # a repo's path, or the name of a repo next to the current one
   ```
   It branches from the remote's default branch (or `BASE` from `.wt.conf`)
   after a fetch. Run every later command in the printed path.
@@ -58,7 +58,7 @@ session sitting in a main checkout gets a task, start the task in its own
 session and keep this one free:
 
 ```bash
-wt new <group>/<repo> <branch> --agent claude --brief - <<'BRIEF'
+wt new <repo> <branch> --agent claude --brief - <<'BRIEF'
 <task, what is known with file:line, constraints, open questions, the next step>
 BRIEF
 ```
@@ -76,7 +76,7 @@ Merge a PR with `gh pr merge <n> --match-head-commit "$(git -C <worktree> rev-pa
 the forge refuses when the PR head is not the worktree's HEAD, so a commit
 that was never pushed is not left behind. When you merge a handed-off branch
 from the main checkout, run
-`wt clean <worktree path>` (or `wt sync <group>`) right after the push: it
+`wt clean <worktree path>` (or `wt sync`) right after the push: it
 removes the worktree and its Herdr workspace, and with it the child session,
 which would otherwise sit idle. Do not `/exit` children by hand. A workspace
 whose agent is still `working` or `blocked` is kept and reported. If `wt`
@@ -97,13 +97,18 @@ remote branch is not touched; delete it when merging (the forge's option).
 
 - `wt hook`: the Claude Code `SessionEnd` hook. Cleans the session's own
   worktree; with `TASK_RE` set, also the same task's worktrees in the
-  group's other repos. Does nothing outside `.worktrees` and does not update
+  project's other repos. Does nothing outside `.worktrees` and does not update
   the main checkout: `wt sync` does.
-- `wt sync [group] [--dry-run]`: per repo, fetch, fast-forward the local
+- `wt sync [dir] [--dry-run]`: for every repo of the project (the current
+  one, or the folder `dir`), fetch, fast-forward the local
   default branch, prune stale worktrees, remove merged ones and report on the
   rest (`✔` removed, `⚠` merged but dirty, `•` kept and why).
-- `wt clean [path]`, `wt clean --all [group]`: the same check for one or all.
-- `wt list`: every open task worktree and its uncommitted file count.
+- `wt clean [path]`, `wt clean --all [dir]`: the same check for one or all.
+- `wt list [dir]`: every open task worktree and its uncommitted file count.
+
+With `WT_ROOT` set (projects laid out as `$WT_ROOT/<group>/<repo>`), `wt new
+<group>/<repo>` and `wt sync <group>` work from anywhere, and `sync`, `list`
+and `clean --all` outside a project cover every group.
 
 Inside Herdr, `wt new` also opens a workspace for the repo's main checkout.
 Once the repo's last task worktree is removed, `wt` closes that workspace too,
@@ -114,7 +119,7 @@ up, or at the start of a session.
 
 ## Testing `wt` itself
 
-Use a throwaway `WT_ROOT` (a bare `origin` plus a clone) and run `wt` with
+Use a throwaway folder (a bare `origin` plus a clone) and run `wt` with
 `env -u HERDR_ENV`. Inside Herdr, `wt new` opens a Herdr workspace for every
 test repo, and an interrupted test leaves them open. To test the Herdr path
 itself, use a separate Herdr session (`herdr --session`) and stop it afterwards.

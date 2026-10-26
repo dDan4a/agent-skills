@@ -22,7 +22,7 @@
       "name": "parallel-worktrees",
       "source": "./",
       "description": "Run parallel coding-agent sessions safely: one task = one branch = one git worktree, created with a bundled script, handed off to a new session, removed once merged (merge or squash).",
-      "version": "0.1.7",
+      "version": "0.2.0",
       "license": "MIT",
       "keywords": ["git", "worktree", "parallel", "agents", "herdr"],
       "skills": ["./skills/parallel-worktrees"],
