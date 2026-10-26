@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# A project outside $WT_ROOT with its settings in the repos' own .wt.conf (sandbox 6), run without WT_ROOT:
+# A project outside $WT_ROOT with local settings in the project's .wt.conf and lib's own one (sandbox 6), run without WT_ROOT:
 # `wt new` by path and by sibling name, base branch and linked files from the config, list, and the SessionEnd
 # hook removing the task's merged worktrees in both repos. Run: bash evals/repo-test.sh
 set -euo pipefail
@@ -13,11 +13,12 @@ git_() { git -c user.name=Test -c user.email=test@example.com "$@"; }
 
 cd "$app"
 [ "$(wt new . SHOP-7.cart 2>/dev/null)" = "$W/app/SHOP-7.cart" ] || fail "wt new . did not print $W/app/SHOP-7.cart"
-[ -f "$W/app/SHOP-7.cart/develop.txt" ] || fail "app task did not branch from develop (committed .wt.conf)"
+[ -f "$W/app/SHOP-7.cart/develop.txt" ] || fail "app task did not branch from develop (project .wt.conf)"
 [ "$(readlink "$W/app/SHOP-7.cart/.env")" = "$app/.env" ] || fail ".env not linked by link_local_files"
 cd "$W/app/SHOP-7.cart"
 [ "$(wt new lib SHOP-7.cart 2>/dev/null)" = "$W/lib/SHOP-7.cart" ] || fail "wt new <sibling> from a worktree"
-[ -f "$W/lib/SHOP-7.cart/stable.txt" ] || fail "lib task did not branch from stable (local .wt.conf)"
+[ -f "$W/lib/SHOP-7.cart/stable.txt" ] || fail "lib task did not branch from stable (repo .wt.conf overrides the project one)"
+[ ! -e "$W/lib/SHOP-7.cart/.env" ] || fail "link_local_files linked .env into lib, case \$repo ignored"
 [ "$(wt list | awk '{print $1}' | tr '\n' ' ')" = "shop/.worktrees/app/SHOP-7.cart shop/.worktrees/lib/SHOP-7.cart " ] ||
   fail "wt list: $(wt list)"
 

@@ -46,10 +46,17 @@ Other agents (Codex, Gemini CLI, …) have no session-end event at the time of
 writing. Run `wt sync` by hand, or from a session-start hook if the agent has
 one; a merged worktree is then removed when the next session starts.
 
-## Repo settings: `<repo>/.wt.conf`
+## Settings: `.wt.conf`
 
-Optional, sourced by bash. Commit it so the whole team gets the same settings;
-`wt` reads it from the main checkout, so an uncommitted local one works too:
+Optional, local to each machine and kept out of git (add `.wt.conf` to the
+repo's `.gitignore` or `.git/info/exclude`). Sourced by bash in this order, the
+later one wins:
+
+1. `<project>/.wt.conf`: the folder holding the main checkouts and `.worktrees`;
+   one file for all the project's repos.
+2. `<repo>/.wt.conf` in the main checkout: overrides the project's for that repo.
+
+Without either, `wt` branches from the remote's HEAD branch.
 
 ```bash
 BASE=main                 # base branch; default: the remote's HEAD branch
@@ -63,11 +70,15 @@ TASK_RE='PROJ-[0-9]+'     # task id at the start of branch names (<id>.<desc>):
 # untracked file counts as an uncommitted change and blocks cleanup.
 link_local_files() {
   local repo=$1 src=$2 dst=$3
-  ln -sfn "$src/.env" "$dst/.env"
+  case $repo in
+    api) ln -sfn "$src/.env" "$dst/.env" ;;
+    web) ln -sfn "$src/config.local.json" "$dst/config.local.json" ;;
+  esac
 }
 ```
 
-The project's other repos are `$src/../<name>`.
+The project folder is `$(dirname "$src")`, its other repos `$src/../<name>`.
+`$ROOT` holds `$WT_ROOT` (empty without it).
 
 ## Agent instructions
 

@@ -113,27 +113,27 @@ JSON
 JSON
     ;;
   6)
-    # A project outside $WT_ROOT: work/shop/{app,lib}. app commits its .wt.conf (tasks from develop, SHOP-<N> ids,
-    # .env linked); lib has only a local, uncommitted one (tasks from stable).
+    # A project outside $WT_ROOT: work/shop/{app,lib}, with local settings kept out of git. The project's .wt.conf:
+    # tasks from develop, SHOP-<N> ids, app's .env linked; lib's own .wt.conf overrides BASE (tasks from stable).
     W=$S/work/shop
     for repo in app lib; do
       git_ init -q --bare "$S/origin/shop-$repo.git"
       git_ clone -q "$S/origin/shop-$repo.git" "$W/$repo" 2>/dev/null
       ( cd "$W/$repo"
-        echo "# $repo" > README.md; echo .env > .gitignore
-        if [ $repo = app ]; then
-          cat > .wt.conf <<'CONF'
-BASE=develop
-TASK_RE='SHOP-[0-9]+'
-link_local_files() { ln -sfn "$2/.env" "$3/.env"; }
-CONF
-        fi
+        echo "# $repo" > README.md; printf '.env\n.wt.conf\n' > .gitignore
         git_ add -A; git_ commit -qm init; git_ push -q origin main
         branch=develop; [ $repo = lib ] && branch=stable
         git_ checkout -qb $branch; echo "$branch work" > $branch.txt; git_ add -A; git_ commit -qm "$branch work"
         git_ push -q origin $branch; git_ checkout -q main
         git remote set-head origin main )
     done
+    cat > "$W/.wt.conf" <<'CONF'
+BASE=develop
+TASK_RE='SHOP-[0-9]+'
+link_local_files() {
+  case $1 in app) ln -sfn "$2/.env" "$3/.env" ;; esac
+}
+CONF
     echo "SECRET=1" > "$W/app/.env"
     echo "BASE=stable" > "$W/lib/.wt.conf"
     ;;
