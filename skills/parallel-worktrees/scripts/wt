@@ -22,7 +22,9 @@
 # directory. With $WT_ROOT set (projects laid out as $WT_ROOT/<group>/<repo>), [dir] may be a group, and
 # outside a project sync, list and clean --all cover every group.
 #
-# Per repo, an optional <repo>/.wt.conf (bash, read from the main checkout, usually committed) may set:
+# Settings are local to each machine, kept out of git, and optional: <project>/.wt.conf (one for all the
+# project's repos; link_local_files can `case $repo`), then <repo>/.wt.conf in the main checkout, which
+# overrides it. Both are bash and may set:
 #   BASE=master              base branch (default: the remote's HEAD branch)
 #   REMOTE=origin            remote to branch from and check merges against
 #   INTEGRATION=dev          a branch merged before BASE, only for the report
@@ -44,12 +46,13 @@ ROOT=""; [ -n "${WT_ROOT:-}" ] && ROOT=$(abspath "$WT_ROOT")
 # main_of <path>: the main checkout of the repo or worktree at path.
 main_of() { local d; d=$(git -C "$1" rev-parse --path-format=absolute --git-common-dir 2>/dev/null) && dirname "$d"; }
 
-# load_repo <main checkout>: sets REPO, WT_DIR and the repo's settings. The config comes from the main
-# checkout, so a local, uncommitted .wt.conf works too.
+# load_repo <main checkout>: sets REPO, WT_DIR and the repo's settings: the project's .wt.conf, then the
+# repo's own one from the main checkout.
 load_repo() {
   REPO=$(basename "$1") WT_DIR="$(dirname "$1")/.worktrees"
   BASE="" REMOTE=origin INTEGRATION="" TASK_RE=""
   link_local_files() { :; }
+  [ -f "$(dirname "$1")/.wt.conf" ] && . "$(dirname "$1")/.wt.conf"
   [ -f "$1/.wt.conf" ] && . "$1/.wt.conf"
   return 0
 }
@@ -121,7 +124,7 @@ cmd_new() {
   [ -n "$agent" ] && [ "${HERDR_ENV:-}" != 1 ] && { say "--agent needs Herdr (HERDR_ENV=1)"; exit 1; }
 
   local base; base=$(base_of "$src")
-  [ -n "$base" ] || { say "cannot tell the base branch of $src; set BASE in $src/.wt.conf"; exit 1; }
+  [ -n "$base" ] || { say "cannot tell the base branch of $src; set BASE in .wt.conf"; exit 1; }
   git -C "$src" fetch --quiet "$REMOTE" "$base" || say "fetch failed, using local $REMOTE/$base"
   mkdir -p "$(dirname "$dst")"
   local pane=""
@@ -344,5 +347,5 @@ case ${1:-} in
   list)  shift; cmd_list "$@" ;;
   hook)  cmd_hook; exit 0 ;;
   close-main) close_main_ws "$2" ;;   # internal: the delayed Herdr removal calls it after the worktree is gone
-  *)     sed -n '2,30p' "$0"; [ $# -eq 0 ] ;;   # bare `wt` is help, not an error
+  *)     sed -n '2,32p' "$0"; [ $# -eq 0 ] ;;   # bare `wt` is help, not an error
 esac

@@ -15,8 +15,9 @@ exactly one session works there.
 
 ```
 <project>/                      # any folder; one per client or kind of work
+  .wt.conf                      # optional local settings for all its repos (bash, not in git), see references/setup.md
   <repo>/                       # main checkout, stays on the default branch
-    .wt.conf                    # optional repo settings (bash, committed), see references/setup.md
+    .wt.conf                    # optional local override for this repo
   .worktrees/<repo>/<branch>/   # one task worktree per branch, e.g. .worktrees/api/fix/login
 ```
 
@@ -32,7 +33,7 @@ needed. `wt` is `scripts/wt` in this skill. If it is not on `PATH`, see
   release there when the user asks; do task work in a worktree.
 - **Start a task with `wt new`**, not `git worktree add` or the agent's own
   worktree feature: `wt` puts the worktree where cleanup finds it and links
-  the untracked files the repo's `.wt.conf` lists.
+  the untracked files `.wt.conf` lists.
   ```bash
   wt new . <branch>                # inside the repo; prints the worktree path, then work there
   wt new <path-or-repo> <branch>   # a repo's path, or the name of a repo next to the current one

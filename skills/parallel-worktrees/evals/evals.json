@@ -89,7 +89,7 @@
       "id": 6,
       "name": "repo-config-outside-root",
       "prompt": "Start a task here: the shop app needs a cart total. Ticket SHOP-7. Other agent sessions are working in this repo too.",
-      "expected_output": "Runs `wt new . SHOP-7.<desc>` in work/shop/app (outside $WT_ROOT): the worktree lands in work/shop/.worktrees/app/, branches from develop as the repo's own .wt.conf says, gets .env linked, and the main checkout stays on main and clean.",
+      "expected_output": "Runs `wt new . SHOP-7.<desc>` in work/shop/app (outside $WT_ROOT): the worktree lands in work/shop/.worktrees/app/, branches from develop as the project's local .wt.conf (work/shop/.wt.conf) says, gets .env linked, and the main checkout stays on main and clean.",
       "files": [
         "evals/sandbox.sh"
       ],
@@ -97,7 +97,7 @@
         "The worktree was created with `wt new` (the transcript shows it), not with `git worktree add`, `git checkout -b` or `git switch` run by the agent",
         "The new worktree is at work/shop/.worktrees/app/<branch> in the sandbox, not under $WT_ROOT",
         "The branch name starts with `SHOP-7.`",
-        "The worktree contains develop.txt (it branched from origin/develop, the BASE in app/.wt.conf) and its .env is a link to the main checkout's .env",
+        "The worktree contains develop.txt (it branched from origin/develop, the BASE in work/shop/.wt.conf) and its .env is a link to the main checkout's .env",
         "The main checkout work/shop/app is still on `main` with no uncommitted changes",
         "Nothing was pushed or merged, and the final reply names the branch and the worktree path"
       ]
