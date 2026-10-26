@@ -5,7 +5,7 @@
       "id": 1,
       "name": "start-task",
       "prompt": "The login handler in this repo returns 500 when the password is empty. Start on a fix in a new branch. Other agent sessions are working in this repo too.",
-      "expected_output": "Creates the task worktree with `wt new acme/api fix/...` (not git worktree add, not a branch switch in the main checkout), makes the change inside it, leaves the main checkout on main and clean, does not push, and reports branch and worktree path.",
+      "expected_output": "Creates the task worktree with `wt new . fix/...` (or `wt new acme/api fix/...`) (not git worktree add, not a branch switch in the main checkout), makes the change inside it, leaves the main checkout on main and clean, does not push, and reports branch and worktree path.",
       "files": [
         "evals/sandbox.sh"
       ],
@@ -56,15 +56,14 @@
     {
       "id": 4,
       "name": "sessionend-hook",
-      "prompt": "Set up Claude Code so that when a session ends, its worktree is removed automatically once the branch is merged. My Claude settings live in my dotfiles, ~/dotfiles/claude/settings.json (symlinked to ~/.claude/settings.json). wt is already in ~/.local/bin, and my projects root is in $WT_ROOT.",
-      "expected_output": "Adds a SessionEnd hook running `wt hook` to ~/dotfiles/claude/settings.json, with WT_ROOT set in the command because it is not ~/projects, keeps the existing settings, and checks the command.",
+      "prompt": "Set up Claude Code so that when a session ends, its worktree is removed automatically once the branch is merged. My Claude settings live in my dotfiles, ~/dotfiles/claude/settings.json (symlinked to ~/.claude/settings.json). wt is already in ~/.local/bin.",
+      "expected_output": "Adds a SessionEnd hook running `wt hook` to ~/dotfiles/claude/settings.json, keeps the existing settings, and checks the command.",
       "files": [
         "evals/sandbox.sh"
       ],
       "expectations": [
         "~/dotfiles/claude/settings.json (in the sandbox home) has hooks.SessionEnd with a command that runs `wt hook`",
         "The hook command calls wt by an absolute or $HOME-based path, not a bare `wt` that depends on the hook's PATH",
-        "The hook command sets WT_ROOT to the sandbox projects root",
         "With the hook added, the settings that were there before (model, permissions) are still there and the file is valid JSON",
         "The agent ran the configured hook command itself (for example piped a JSON with a cwd into it); `wt sync --dry-run` alone does not count"
       ]
@@ -84,6 +83,23 @@
         "The herdr log has no `worktree remove --workspace w-8` and the feat/busy worktree still exists",
         "The agent did not close the child session by hand (no `herdr agent prompt ... /exit`, `herdr workspace close`, `rm -rf` or hand-run `git worktree remove`)",
         "The final reply says feat/busy was kept because its agent is still working"
+      ]
+    },
+    {
+      "id": 6,
+      "name": "repo-config-outside-root",
+      "prompt": "Start a task here: the shop app needs a cart total. Ticket SHOP-7. Other agent sessions are working in this repo too.",
+      "expected_output": "Runs `wt new . SHOP-7.<desc>` in work/shop/app (outside $WT_ROOT): the worktree lands in work/shop/.worktrees/app/, branches from develop as the repo's own .wt.conf says, gets .env linked, and the main checkout stays on main and clean.",
+      "files": [
+        "evals/sandbox.sh"
+      ],
+      "expectations": [
+        "The worktree was created with `wt new` (the transcript shows it), not with `git worktree add`, `git checkout -b` or `git switch` run by the agent",
+        "The new worktree is at work/shop/.worktrees/app/<branch> in the sandbox, not under $WT_ROOT",
+        "The branch name starts with `SHOP-7.`",
+        "The worktree contains develop.txt (it branched from origin/develop, the BASE in app/.wt.conf) and its .env is a link to the main checkout's .env",
+        "The main checkout work/shop/app is still on `main` with no uncommitted changes",
+        "Nothing was pushed or merged, and the final reply names the branch and the worktree path"
       ]
     }
   ]

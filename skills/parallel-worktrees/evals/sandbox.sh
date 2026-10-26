@@ -3,7 +3,8 @@
 #   sandbox.sh setup <dir> <eval-id>   build the sandbox, print the session's cwd
 #   sandbox.sh state <dir>             dump what the grader needs
 set -euo pipefail
-cmd=$1 S=$(realpath -m "$2") id=${3:-}
+cmd=$1 id=${3:-}
+mkdir -p "$2"; S=$(cd "$2" && pwd -P)
 skill=$(dirname "$(dirname "$(realpath "$0")")")
 P=$S/projects
 
@@ -13,6 +14,7 @@ if [ "$cmd" = state ]; then
   echo "== worktrees"; for r in "$P"/acme/*/; do echo "-- ${r%/}"; git -C "$r" worktree list; git -C "$r" branch --format='%(refname:short)'; done
   echo "== main checkout branches"; for r in "$P"/acme/*/; do echo "$(basename "$r"): $(git -C "$r" branch --show-current) $(git -C "$r" status --porcelain | wc -l) dirty"; done
   echo "== files under acme/.worktrees"; { find "$P/acme/.worktrees" -maxdepth 4 -not -path '*/.git*' 2>/dev/null || true; } | sed "s|$S/||" | sort
+  [ -d "$S/work/shop" ] && { echo "== work/shop"; for r in "$S"/work/shop/*/; do echo "-- ${r%/}"; git -C "$r" worktree list; git -C "$r" status --porcelain; done; }
   echo "== herdr calls"; cat "$S/herdr.log" 2>/dev/null || echo none
   echo "== ~/dotfiles/claude/settings.json"; cat "$S/home/dotfiles/claude/settings.json" 2>/dev/null || echo none
   echo "== wt on PATH"; ls -l "$S/home/.local/bin/" 2>/dev/null || true
@@ -110,8 +112,33 @@ JSON
  {"name":"feat-busy","agent":"claude","agent_status":"working","workspace_id":"w-8","pane_id":"w-8:p1"}]}}
 JSON
     ;;
+  6)
+    # A project outside $WT_ROOT: work/shop/{app,lib}. app commits its .wt.conf (tasks from develop, SHOP-<N> ids,
+    # .env linked); lib has only a local, uncommitted one (tasks from stable).
+    W=$S/work/shop
+    for repo in app lib; do
+      git_ init -q --bare "$S/origin/shop-$repo.git"
+      git_ clone -q "$S/origin/shop-$repo.git" "$W/$repo" 2>/dev/null
+      ( cd "$W/$repo"
+        echo "# $repo" > README.md; echo .env > .gitignore
+        if [ $repo = app ]; then
+          cat > .wt.conf <<'CONF'
+BASE=develop
+TASK_RE='SHOP-[0-9]+'
+link_local_files() { ln -sfn "$2/.env" "$3/.env"; }
+CONF
+        fi
+        git_ add -A; git_ commit -qm init; git_ push -q origin main
+        branch=develop; [ $repo = lib ] && branch=stable
+        git_ checkout -qb $branch; echo "$branch work" > $branch.txt; git_ add -A; git_ commit -qm "$branch work"
+        git_ push -q origin $branch; git_ checkout -q main
+        git remote set-head origin main )
+    done
+    echo "SECRET=1" > "$W/app/.env"
+    echo "BASE=stable" > "$W/lib/.wt.conf"
+    ;;
 esac
 cd "$P"
 # Eval 5 starts in the group, not in acme/web: Claude Code's sandbox mounts over the cwd repo's .git, so removing
 # .git/worktrees/<name> there fails with "Device or resource busy".
-case $id in 1|2) echo "$P/acme/api" ;; 5) echo "$P/acme" ;; *) echo "$P" ;; esac
+case $id in 1|2) echo "$P/acme/api" ;; 5) echo "$P/acme" ;; 6) echo "$S/work/shop/app" ;; *) echo "$P" ;; esac

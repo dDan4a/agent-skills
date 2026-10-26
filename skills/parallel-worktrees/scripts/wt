@@ -1,23 +1,28 @@
 #!/bin/bash
-# Task worktrees for every project under $WT_ROOT (default ~/projects, laid out as <group>/<repo>): one git
-# worktree per task, so parallel agent sessions never share a checkout. Removed once the branch is merged.
+# Task worktrees: one git worktree per task, so parallel agent sessions never share a checkout. A repo's
+# worktrees live next to it, in <dir>/.worktrees/<repo>/<branch> (<dir> holds the main checkout <dir>/<repo>),
+# and are removed once their branch is merged.
 #
 #   wt new <repo> <branch> [--agent claude|codex] [--role NAME] [--brief FILE|-] [--focus]
-#                            create <group>/.worktrees/<repo>/<branch> from the repo's base branch;
-#                            <repo> is <group>/<repo>, or just <repo> when run inside the group;
+#                            create the task worktree from the repo's base branch; <repo> is the repo's path
+#                            (`.` inside it), the name of a repo next to the current one, or <group>/<repo>
+#                            under $WT_ROOT
 #                            --agent starts a new agent session there (Herdr only) and hands it the brief
 #                            --role runs that Claude session as `claude --agent NAME` (.claude/agents/NAME.md)
-#                            WT_GROUP=<group> picks the group when run outside it
 #   wt clean [path]          remove that worktree if its branch is merged
-#   wt clean --all [group]   same for every task worktree (of one group)
-#   wt sync [group] [--dry-run]
+#   wt clean --all [dir]     same for every task worktree of the project
+#   wt sync [dir] [--dry-run]
 #                            per repo: fetch once, fast-forward the local base branch, prune stale
 #                            worktrees, remove merged ones and report on every task worktree
-#   wt list                  every task worktree
+#   wt list [dir]            every task worktree of the project
 #   wt hook                  Claude Code SessionEnd hook: `wt clean` for the session's cwd and the same
-#                            task's worktrees in other repos of the group
+#                            task's worktrees in the project's other repos
 #
-# Per group, an optional <group>/.wt.conf (bash) may set:
+# The project is the folder holding the main checkouts and .worktrees: [dir], else the one of the current
+# directory. With $WT_ROOT set (projects laid out as $WT_ROOT/<group>/<repo>), [dir] may be a group, and
+# outside a project sync, list and clean --all cover every group.
+#
+# Per repo, an optional <repo>/.wt.conf (bash, read from the main checkout, usually committed) may set:
 #   BASE=master              base branch (default: the remote's HEAD branch)
 #   REMOTE=origin            remote to branch from and check merges against
 #   INTEGRATION=dev          a branch merged before BASE, only for the report
@@ -25,20 +30,61 @@
 #   link_local_files() { repo=$1 src=$2 dst=$3; ... }   untracked files each checkout needs
 set -uo pipefail
 
-ROOT=${WT_ROOT:-$HOME/projects}
 SYNC=0 DRY_RUN=0 NO_FETCH=0
-GROUP="" WT_DIR="" BASE="" REMOTE=origin INTEGRATION="" TASK_RE=""
+REPO="" WT_DIR="" BASE="" REMOTE=origin INTEGRATION="" TASK_RE="" PROJECTS=()
 
 say() { echo "wt: $*" >&2; }
 notify() { command -v notify-send >/dev/null && notify-send -a "Worktrees" "$1" "${2:-}"; say "$1 ${2:-}"; }
+abspath() { (cd "$1" 2>/dev/null && pwd -P); }
+# GNU timeout where there is one (stock macOS has none).
+maybe_timeout() { if command -v timeout >/dev/null; then timeout "$@"; else shift; "$@"; fi; }
 
-# load_group <group>: sets GROUP, WT_DIR and the group's settings.
-load_group() {
-  GROUP=$1 WT_DIR="$ROOT/$1/.worktrees"
+ROOT=""; [ -n "${WT_ROOT:-}" ] && ROOT=$(abspath "$WT_ROOT")
+
+# main_of <path>: the main checkout of the repo or worktree at path.
+main_of() { local d; d=$(git -C "$1" rev-parse --path-format=absolute --git-common-dir 2>/dev/null) && dirname "$d"; }
+
+# load_repo <main checkout>: sets REPO, WT_DIR and the repo's settings. The config comes from the main
+# checkout, so a local, uncommitted .wt.conf works too.
+load_repo() {
+  REPO=$(basename "$1") WT_DIR="$(dirname "$1")/.worktrees"
   BASE="" REMOTE=origin INTEGRATION="" TASK_RE=""
   link_local_files() { :; }
-  [ -f "$ROOT/$GROUP/.wt.conf" ] && . "$ROOT/$GROUP/.wt.conf"
+  [ -f "$1/.wt.conf" ] && . "$1/.wt.conf"
   return 0
+}
+
+# project_of <dir>: the project dir is in, the parent of the first repo or worktree found going up, or a folder
+# with .worktrees. Stops at $WT_ROOT, which may be a repo itself.
+project_of() {
+  local d; d=$(abspath "$1") || return 1
+  while [ "$d" != / ] && [ "$d" != "$ROOT" ]; do
+    [ -e "$d/.git" ] && { d=$(main_of "$d") && dirname "$d"; return; }
+    [ -d "$d/.worktrees" ] && { echo "$d"; return; }
+    d=$(dirname "$d")
+  done
+  return 1
+}
+
+# projects [dir]: sets PROJECTS, what sync, list and clean --all work on.
+projects() {
+  local d=${1:-.} p
+  [ -n "${1:-}" ] && [ ! -d "$d" ] && [ -n "$ROOT" ] && d=$ROOT/$1       # a group under $WT_ROOT
+  [ -d "$d" ] || { say "no directory $1"; exit 1; }
+  if p=$(project_of "$d"); then PROJECTS=("$p")
+  elif [ -n "$ROOT" ] && { [ -z "${1:-}" ] || [ "$(abspath "$d")" = "$ROOT" ]; }; then
+    PROJECTS=(); for p in "$ROOT"/*/; do PROJECTS+=("${p%/}"); done
+  else say "no project at $d: run inside a repo or name the folder that holds its .worktrees"; exit 1; fi
+}
+
+# repo_dir <spec>: the main checkout `wt new` works on.
+repo_dir() {
+  local here d
+  here=$(project_of .) || here=""
+  for d in "$1" ${here:+"$here/$1"} ${ROOT:+"$ROOT/$1"}; do
+    [ -e "$d/.git" ] && { main_of "$d"; return; }
+  done
+  return 1
 }
 
 # base_of <repo dir>: the branch tasks start from and merge into.
@@ -49,9 +95,6 @@ base_of() {
     head=$(git -C "$1" remote set-head "$REMOTE" --auto >/dev/null 2>&1 && git -C "$1" symbolic-ref --quiet --short "refs/remotes/$REMOTE/HEAD")
   echo "${head#"$REMOTE"/}"
 }
-
-# group_of <abs path>: the group a path under ROOT belongs to.
-group_of() { local rel=${1#"$ROOT"/}; [ "$rel" != "$1" ] && echo "${rel%%/*}"; }
 
 cmd_new() {
   local spec=${1:?usage: wt new <repo> <branch>} branch=${2:?usage: wt new <repo> <branch>}; shift 2
@@ -70,18 +113,15 @@ cmd_new() {
     [ -n "$agent" ] || { say "--role needs --agent claude"; exit 1; }
     [ "$agent" = claude ] || { say "roles are Claude Code only (--agent claude)"; exit 1; }
   fi
-  local group repo
-  if [[ $spec == */* ]]; then group=${spec%%/*} repo=${spec#*/}
-  else group=${WT_GROUP:-$(group_of "$(realpath "$PWD")")} repo=$spec; fi
-  [ -n "$group" ] || { say "run inside a group or name it: wt new <group>/<repo> <branch>"; exit 1; }
-  load_group "$group"
-  local src="$ROOT/$group/$repo" dst="$WT_DIR/$repo/$branch"
-  [ -d "$src/.git" ] || { say "no repo $src"; exit 1; }
+  local src
+  src=$(repo_dir "$spec") || { say "no repo '$spec': give its path (. inside it), a repo next to this one or <group>/<repo> under \$WT_ROOT"; exit 1; }
+  load_repo "$src"
+  local dst="$WT_DIR/$REPO/$branch"
   [ -e "$dst" ] && { say "already exists: $dst"; echo "$dst"; exit 0; }
   [ -n "$agent" ] && [ "${HERDR_ENV:-}" != 1 ] && { say "--agent needs Herdr (HERDR_ENV=1)"; exit 1; }
 
   local base; base=$(base_of "$src")
-  [ -n "$base" ] || { say "cannot tell the base branch of $src; set BASE in $group/.wt.conf"; exit 1; }
+  [ -n "$base" ] || { say "cannot tell the base branch of $src; set BASE in $src/.wt.conf"; exit 1; }
   git -C "$src" fetch --quiet "$REMOTE" "$base" || say "fetch failed, using local $REMOTE/$base"
   mkdir -p "$(dirname "$dst")"
   local pane=""
@@ -92,7 +132,7 @@ cmd_new() {
   else
     git -C "$src" worktree add --no-track -b "$branch" "$dst" "$REMOTE/$base" >&2 || exit 1
   fi
-  link_local_files "$repo" "$src" "$dst"
+  link_local_files "$REPO" "$src" "$dst"
   echo "$dst"
 
   [ -n "$agent" ] || return 0
@@ -108,7 +148,7 @@ cmd_new() {
   local banned=() cmd
   for cmd in "git push" "gh pr create" "gh pr merge" "gh pr ready"; do banned+=("Bash($cmd *)" "Bash(rtk $cmd *)"); done
   [ -n "$role" ] && args=(-- --agent "$role" --permission-mode auto --disallowedTools "${banned[@]}")
-  herdr agent start "${name:-task}" --kind "$agent" --pane "$pane" "${args[@]}" >/dev/null || { say "agent did not start in $pane"; exit 1; }
+  herdr agent start "${name:-task}" --kind "$agent" --pane "$pane" ${args[@]+"${args[@]}"} >/dev/null || { say "agent did not start in $pane"; exit 1; }
   # The brief goes inline: a file outside the worktree would cost the new session a permission prompt.
   local prompt="You are continuing task $branch in its own git worktree ($dst), handed off from another session."
   [ -n "$text" ] && prompt=$(printf '%s Handoff brief:\n\n%s' "$prompt" "$text")
@@ -132,21 +172,17 @@ report() {
 
 # Remove one task worktree if its branch reached the base branch.
 clean_one() {
-  local dst=$1 group
-  group=$(group_of "$dst") || return 0
-  [ -n "$group" ] || return 0
-  load_group "$group"
-  case $dst in "$WT_DIR"/*/*) ;; *) return 0 ;; esac        # only task worktrees
   local top branch main base
-  top=$(git -C "$dst" rev-parse --show-toplevel 2>/dev/null) || return 0
+  top=$(git -C "$1" rev-parse --show-toplevel 2>/dev/null) && main=$(main_of "$top") || return 0
+  load_repo "$main"
+  case $top in "$WT_DIR/$REPO"/*) ;; *) return 0 ;; esac        # only task worktrees
   branch=$(git -C "$top" branch --show-current)
   # A detached HEAD hides which branch the work belongs to (and commits made there may be on no branch): say so.
   [ -n "$branch" ] || { report kept "${top#"$WT_DIR"/}" "detached HEAD at $(git -C "$top" rev-parse --short HEAD), switch to its branch"; return 0; }
-  main=$(dirname "$(git -C "$top" rev-parse --path-format=absolute --git-common-dir)")
   base=$(base_of "$main")
   [ -n "$base" ] || return 0
 
-  [ "$NO_FETCH" = 1 ] || timeout 20 git -C "$main" fetch --quiet --prune "$REMOTE" 2>/dev/null
+  [ "$NO_FETCH" = 1 ] || maybe_timeout 20 git -C "$main" fetch --quiet --prune "$REMOTE" 2>/dev/null
   # A branch with no commits yet is also "contained" in the base; skip it.
   if [ "$(git -C "$main" reflog show --format=%H "refs/heads/$branch" -- | tail -1)" = "$(git -C "$main" rev-parse "refs/heads/$branch")" ]; then
     report kept "$branch" "no commits yet"; return 0
@@ -190,7 +226,8 @@ clean_one() {
   while [[ $d == "$WT_DIR"/*/* ]]; do parents+=("$d"); d=$(dirname "$d"); done
   if [ -n "$ws" ] && [ "$ws" = "${HERDR_WORKSPACE_ID:-}" ]; then
     # Detached and delayed: the caller (the SessionEnd hook) runs inside that workspace's own pane.
-    setsid bash -c "sleep 2; herdr worktree remove --workspace '$ws' --force >/dev/null 2>&1 || git -C '$main' worktree remove --force '$top'; git -C '$main' branch -D '$branch' >/dev/null; rmdir $(printf '%q ' "${parents[@]}") 2>/dev/null; $(printf '%q' "$(realpath "$0")") close-main '$main'" </dev/null >/dev/null 2>&1 &
+    local detach=nohup; command -v setsid >/dev/null && detach=setsid
+    $detach bash -c "sleep 2; herdr worktree remove --workspace '$ws' --force >/dev/null 2>&1 || git -C '$main' worktree remove --force '$top'; git -C '$main' branch -D '$branch' >/dev/null; rmdir $(printf '%q ' ${parents[@]+"${parents[@]}"}) 2>/dev/null; $(printf '%q' "$(abspath "$(dirname "$0")")/$(basename "$0")") close-main '$main'" </dev/null >/dev/null 2>&1 &
   else
     # -D: a squash-merged branch is not an ancestor, but the checks above showed it is merged.
     { [ -n "$ws" ] && herdr worktree remove --workspace "$ws" --force >/dev/null 2>&1; } || git -C "$main" worktree remove --force "$top" ||
@@ -220,61 +257,70 @@ close_main_ws() {
   herdr workspace close "$ws" >/dev/null 2>&1
 }
 
-# worktrees [group]: every task worktree directory. Found by its `.git` file, not by depth: a branch like
+# worktrees <project>: every task worktree directory. Found by its `.git` file, not by depth: a branch like
 # `fix/foo` lives one level deeper (`<repo>/fix/foo`).
-worktrees() { find "$ROOT"/${1:-*}/.worktrees -maxdepth 8 -name .git -type f -printf '%h\n' 2>/dev/null | sort; }
+worktrees() { find "$1/.worktrees" -maxdepth 8 -name .git -type f 2>/dev/null | sed 's|/\.git$||' | sort; }
 
 cmd_clean() {
   if [ "${1:-}" = --all ]; then
-    local d; while read -r d; do clean_one "$d"; done < <(worktrees "${2:-}")
+    projects "${2:-}"
+    local p d; for p in "${PROJECTS[@]}"; do while read -r d; do clean_one "$d"; done < <(worktrees "$p"); done
   else
-    clean_one "$(realpath "${1:-$PWD}")"
+    clean_one "${1:-.}"
   fi
 }
 
 cmd_list() {
-  local d
-  while read -r d; do
-    printf '%-60s %s\n' "${d#"$ROOT"/}" "$(git -C "$d" status --porcelain 2>/dev/null | wc -l | sed 's/^0$//; s/.\+/& uncommitted/')"
-  done < <(worktrees)
+  projects "${1:-}"
+  local p d n
+  for p in "${PROJECTS[@]}"; do
+    while read -r d; do
+      n=$(git -C "$d" status --porcelain 2>/dev/null | wc -l | tr -d ' ')
+      [ "$n" = 0 ] && n="" || n="$n uncommitted"
+      printf '%-60s %s\n' "${d#"$(dirname "$p")"/}" "$n"
+    done < <(worktrees "$p")
+  done
 }
 
-# SessionEnd: clean the session's worktree and every other worktree of the same task in the group
+# SessionEnd: clean the session's worktree and every other worktree of the same task in the project
 # (a session in one repo may also have opened the task's worktree in another repo, where no session ends).
 cmd_hook() {
-  local cwd rel own task d
-  cwd=$(jq -r '.cwd // empty'); [ -n "$cwd" ] || return 0
-  cwd=$(realpath "$cwd")
+  local cwd top main rel own="" task="" wt_dir d
+  cwd=$(jq -r '.cwd // empty'); [ -n "$cwd" ] && [ -d "$cwd" ] || return 0
+  # Read the task before clean_one removes the worktree.
+  if top=$(git -C "$cwd" rev-parse --show-toplevel 2>/dev/null) && main=$(main_of "$top"); then
+    load_repo "$main"
+    rel=${top#"$WT_DIR"/}
+    if [ -n "$TASK_RE" ] && [ "$rel" != "$top" ]; then
+      wt_dir=$WT_DIR own="$WT_DIR/$(cut -d/ -f1-2 <<<"$rel")"
+      task=$(cut -d/ -f2 <<<"$rel" | grep -oE "^$TASK_RE") || task=""
+    fi
+  fi
   clean_one "$cwd"
-  local group; group=$(group_of "$cwd") && [ -n "$group" ] || return 0
-  load_group "$group"
-  [ -n "$TASK_RE" ] || return 0
-  rel=${cwd#"$WT_DIR"/}; [ "$rel" != "$cwd" ] || return 0
-  own="$WT_DIR/$(cut -d/ -f1-2 <<<"$rel")"
-  task=$(cut -d/ -f2 <<<"$rel" | grep -oE "^$TASK_RE") || return 0
-  for d in "$WT_DIR"/*/"$task".*/; do
+  [ -n "$task" ] || return 0
+  for d in "$wt_dir"/*/"$task".*/; do
     [ -d "$d" ] && [ "${d%/}" != "$own" ] && clean_one "${d%/}"
   done
 }
 
 cmd_sync() {
-  local only=""
+  local only="" a
   for a in "$@"; do case $a in --dry-run) DRY_RUN=1 ;; *) only=$a ;; esac; done
   SYNC=1 NO_FETCH=1
-  local src repo group base d
-  for src in "$ROOT"/${only:-*}/*/; do
+  projects "$only"
+  local p src base d
+  for p in "${PROJECTS[@]}"; do for src in "$p"/*/; do
     src=${src%/}; [ -d "$src/.git" ] || continue
-    group=$(group_of "$src"); repo=$(basename "$src")
-    load_group "$group"
-    # Only groups that use task worktrees.
+    load_repo "$src"
+    # Only projects that use task worktrees.
     [ -d "$WT_DIR" ] || continue
-    echo "$group/$repo"
-    timeout 30 git -C "$src" fetch --quiet --prune "$REMOTE" || echo "  ! fetch failed, using cached $REMOTE/*"
+    echo "$(basename "$p")/$REPO"
+    maybe_timeout 30 git -C "$src" fetch --quiet --prune "$REMOTE" || echo "  ! fetch failed, using cached $REMOTE/*"
     base=$(base_of "$src")
     # Fast-forward only; git refuses to move a branch that is checked out in some worktree.
     if [ "$(git -C "$src" branch --show-current)" = "$base" ]; then
       # The main checkout itself stands on the base branch: fast-forward it when clean.
-      if [ -n "$(git -C "$src" status --porcelain --untracked-files=no)" ]; then echo "  ! $repo has uncommitted changes, $base not updated"
+      if [ -n "$(git -C "$src" status --porcelain --untracked-files=no)" ]; then echo "  ! $REPO has uncommitted changes, $base not updated"
       elif [ "$DRY_RUN" = 1 ]; then echo "  • would fast-forward $base"
       elif git -C "$src" merge --ff-only --quiet "$REMOTE/$base" 2>/dev/null; then echo "  ✔ $base = $REMOTE/$base"
       else echo "  ! local $base has its own commits, left as is"; fi
@@ -286,8 +332,8 @@ cmd_sync() {
       else echo "  ! local $base has its own commits, left as is"; fi
     fi
     [ "$DRY_RUN" = 1 ] || git -C "$src" worktree prune
-    while read -r d; do clean_one "$d"; done < <(worktrees "$group" | grep -F "$WT_DIR/$repo/")
-  done
+    while read -r d; do clean_one "$d"; done < <(worktrees "$p" | grep -F "$WT_DIR/$REPO/")
+  done; done
   return 0
 }
 
@@ -295,8 +341,8 @@ case ${1:-} in
   sync)  shift; cmd_sync "$@" ;;
   new)   shift; cmd_new "$@" ;;
   clean) shift; cmd_clean "$@" ;;
-  list)  cmd_list ;;
+  list)  shift; cmd_list "$@" ;;
   hook)  cmd_hook; exit 0 ;;
   close-main) close_main_ws "$2" ;;   # internal: the delayed Herdr removal calls it after the worktree is gone
-  *)     sed -n '2,24p' "$0"; [ $# -eq 0 ] ;;   # bare `wt` is help, not an error
+  *)     sed -n '2,30p' "$0"; [ $# -eq 0 ] ;;   # bare `wt` is help, not an error
 esac
