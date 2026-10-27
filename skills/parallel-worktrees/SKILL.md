@@ -73,6 +73,14 @@ brief is the new session's only context: write it so a stranger could
 continue. After the handoff, do not touch that task's code
 from this session.
 
+For a contested task it can be cheaper to pick from finished attempts than to
+iterate: `wt fan <repo> <branch> -n 3 --agent claude,codex --brief -` runs
+`wt new --agent` for `<branch>-1..3`, taking the agents in turn from the list,
+with the same brief. It prints the `git diff <base>...<branch>-i` to compare;
+say which attempt is best and why, merge that one, and remove the others by
+hand (their Herdr workspaces, `git worktree remove --force`, `git branch -D`):
+they are never merged, so `wt` keeps them. It costs N times one run.
+
 Merge a PR with `gh pr merge <n> --match-head-commit "$(git -C <worktree> rev-parse HEAD)"`:
 the forge refuses when the PR head is not the worktree's HEAD, so a commit
 that was never pushed is not left behind. When you merge a handed-off branch
