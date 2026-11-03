@@ -33,6 +33,9 @@
 #   INTEGRATION=dev          a branch merged before BASE, only for the report
 #   TASK_RE='PROJ-[0-9]+'    task id in branch names (<id>.<desc>): `wt hook` also cleans that task in other repos
 #   link_local_files() { repo=$1 src=$2 dst=$3; ... }   untracked files each checkout needs
+#
+# $WT_AFTER_CREATE, if set: a bash command `wt new` and `wt fan` run for each new worktree, with its path as $1,
+# before the path is printed and the agent starts. A failure only warns.
 set -uo pipefail
 
 SYNC=0 DRY_RUN=0 NO_FETCH=0
@@ -139,6 +142,10 @@ cmd_new() {
     git -C "$src" worktree add --no-track -b "$branch" "$dst" "$REMOTE/$base" >&2 || exit 1
   fi
   link_local_files "$REPO" "$src" "$dst"
+  # stdout stays the path alone; stdin may hold the brief.
+  if [ -n "${WT_AFTER_CREATE:-}" ]; then
+    bash -c "$WT_AFTER_CREATE" wt "$dst" >&2 </dev/null || say "WT_AFTER_CREATE failed with code $?, going on"
+  fi
   echo "$dst"
 
   [ -n "$agent" ] || return 0
