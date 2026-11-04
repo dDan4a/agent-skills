@@ -80,6 +80,10 @@ link_local_files() {
 The project folder is `$(dirname "$src")`, its other repos `$src/../<name>`.
 `$ROOT` holds `$WT_ROOT` (empty without it).
 
+To run a command for every new worktree, set `WT_AFTER_CREATE` in the environment, for example
+`export WT_AFTER_CREATE='my-setup "$1"'`: bash runs it with the worktree's path as `$1`, before the agent starts. A
+failure only warns.
+
 ## Agent instructions
 
 Put the rules from `SKILL.md` (or a pointer to this skill) into the root

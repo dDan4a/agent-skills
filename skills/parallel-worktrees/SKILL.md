@@ -23,7 +23,8 @@ exactly one session works there.
 
 Task worktrees live next to the repo, wherever it is cloned; nothing else is
 needed. `wt` is `scripts/wt` in this skill. If it is not on `PATH`, see
-`references/setup.md` (install, the SessionEnd hook, repo settings).
+`references/setup.md` (install, the SessionEnd hook, repo settings, a command
+to run for each new worktree).
 
 ## Rules
 

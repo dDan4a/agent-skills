@@ -41,6 +41,22 @@
         "The final reply says it is not running inside Herdr",
         "The final reply has two separate briefs, one per idea, each usable on its own"
       ]
+    },
+    {
+      "id": 4,
+      "name": "choose-place",
+      "prompt": "I'm in Herdr. Four things, split them up: 1) fix the crash in ../api/src/login.js when user has no name, 2) explain how login works in ../api, no changes, 3) in ../budget, sum up what I spent in 2026.csv, 4) help me pick a name for a new CLI.",
+      "expected_output": "The fix goes to a new worktree through `wt new --agent`; the question opens its own workspace on ../api; the budget work opens its own workspace in ../budget; the name opens a tab in the current workspace. Every session reports back to w1:p1, and the session does none of the four itself.",
+      "files": ["evals/sandbox.sh"],
+      "expectations": [
+        "The log shows one `wt new` for the api repo with a branch name and `--agent`, with a brief that describes the crash, and no tab or workspace opened by hand for the fix",
+        "The log shows `workspace create` with `--cwd` at the api folder and `--no-focus` for the login question",
+        "The log shows `workspace create` with `--cwd` at the budget folder and `--no-focus` for the spending sum",
+        "The log shows exactly one `tab create`, with `--workspace w1`, for the CLI name",
+        "Each of the three `agent start` calls uses the pane returned by its `workspace create` or `tab create`",
+        "All four briefs include an instruction to report back with `herdr agent prompt w1:p1`",
+        "The session did not fix the crash, explain login, sum the file or pick a name itself (../api/src/login.js is unchanged)"
+      ]
     }
   ]
 }

@@ -1,15 +1,15 @@
 ---
 name: herdr-tabs
-description: Split parallel ideas into separate Herdr tabs, one agent session per idea, with consistent tab names (emoji type + topic) and a short report back to the session that spawned them. Use inside Herdr (HERDR_ENV=1) when the user brings several independent ideas, questions or tasks at once, asks to "разнеси по вкладкам", "open a tab for this", "start a session for each", or a new topic comes up that should not derail the current session. Not for separate workspaces or git worktrees (code tasks in a repo go through parallel-worktrees).
+description: Split parallel ideas into separate Herdr sessions, one agent per idea, each in the place that fits it (a worktree for a code task, its own workspace for a question about a repo or another project folder, otherwise a tab in the current workspace), with consistent names (emoji type + topic) and a short report back to the session that spawned them. Use inside Herdr (HERDR_ENV=1) when the user brings several independent ideas, questions or tasks at once, asks to "разнеси по вкладкам", "open a tab for this", "start a session for each", or a new topic comes up that should not derail the current session. How worktrees work is up to parallel-worktrees.
 license: MIT
 ---
 
 # Parallel ideas in Herdr tabs
 
-One idea = one tab = one agent session, all in the **current workspace**. The
-tab name says what kind of work it is and what it is about, so the user can
-find it in the sidebar at a glance. Each tab reports back to the session that
-opened it when it is done.
+One idea = one agent session, in the place that fits it (below), usually a tab
+in the **current workspace**. The name says what kind of work it is and what it
+is about, so the user can find it in the sidebar at a glance. Each session
+reports back to the one that opened it when it is done.
 
 Check first: `test "${HERDR_ENV:-}" = 1`. Outside Herdr, do not run `herdr`
 (not even `--help`) and do not ask how to proceed: say it is not inside Herdr,
@@ -25,9 +25,20 @@ line replaced by "end with a 2–3 line summary prefixed with `[<label>]`").
 - A topic that already has a tab (see `herdr tab list`) goes to that tab's agent
   (`herdr agent prompt <its pane>`), not to a new tab.
 
+## Where each session goes
+
+Pick the place per idea, before opening anything:
+
+| The idea | Place | Opened with |
+|---|---|---|
+| A code task in a repo | a new worktree with its own workspace | `wt new <repo> <branch> --agent claude --brief -` (parallel-worktrees) |
+| A question about a repo, no changes | the repo's main checkout, in its own workspace | `herdr workspace create` |
+| Work in another project folder without git | that folder, in its own workspace | `herdr workspace create` |
+| Anything else: no project, the current folder without git, or you cannot tell which folder | a tab in the current workspace | `herdr tab create` |
+
 Tabs share the workspace's checkout. A tab whose idea turns into code changes
-in a repo starts its own worktree (parallel-worktrees, `wt new`); two tabs never
-edit the same files.
+in a repo moves that work to its own worktree; two sessions never edit the same
+files.
 
 ## Naming
 
@@ -72,8 +83,17 @@ Keep the reply-to line: `$HERDR_PANE_ID` is this session's pane, expanded when
 the prompt is sent. The pane id from `tab create` is the confirmation that the
 tab exists: never open extra tabs to test or debug Herdr.
 
-After opening, tell the user the tab labels in one line and do not work on
-those ideas from this session.
+For its own workspace, only the first command changes, with the folder as `--cwd`:
+
+```bash
+pane=$(herdr workspace create --cwd "<folder>" --label "🔍 api-auth" --no-focus | jq -r '.result.root_pane.pane_id')
+```
+
+`wt new --agent` starts the agent and sends the brief itself: pipe in the same
+brief, reply-to line included.
+
+After opening, tell the user the labels and places in one line and do not work
+on those ideas from this session.
 
 ## In a tab that was opened this way
 
