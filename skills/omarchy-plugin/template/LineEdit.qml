@@ -49,9 +49,8 @@ FocusScope {
     if (event.key === Qt.Key_Backspace) {
       if (root.selected)
         root.text = ""
-      else if (ctrl)
+      else if (ctrl) // the last word
         root.text = root.text.replace(/\S*\s*$/, "")
-      // the last word
       else
         root.text = root.text.slice(0, -1)
       root.selected = false

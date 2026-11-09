@@ -1,5 +1,6 @@
+pragma ComponentBehavior: Bound
+
 import QtQuick
-import Quickshell
 import qs.Commons
 import qs.Ui
 
@@ -104,19 +105,20 @@ Panel {
           Repeater {
             model: [["1 minute", 0], ["5 minutes", 1], ["15 minutes", 2]]
             delegate: Item {
+              id: row
               required property var modelData
               width: column.width
               height: label.implicitHeight
               Text {
                 id: label
-                text: modelData[0]
+                text: row.modelData[0]
                 color: root.foreground
                 font.family: root.fontFamily
                 font.pixelSize: Style.font.body
               }
               Text {
                 anchors.right: parent.right
-                text: root.source && root.source.averages.length > 2 ? root.source.averages[modelData[1]].toFixed(2) : "…"
+                text: root.source && root.source.averages.length > 2 ? root.source.averages[row.modelData[1]].toFixed(2) : "…"
                 color: root.foreground
                 font.family: root.fontFamily
                 font.pixelSize: Style.font.body
