@@ -13,6 +13,10 @@ Item {
     id: label
     text: "󰁯"
     color: root.bar ? root.bar.foreground : Color.foreground
-    MouseArea { anchors.fill: parent; onClicked: if (root.source) root.source.snapshot(Quickshell.env("HOME") + "/.bashrc") }
+    MouseArea {
+      anchors.fill: parent
+      onClicked: if (root.source)
+                   root.source.snapshot(Quickshell.env("HOME") + "/.bashrc")
+    }
   }
 }

@@ -19,9 +19,17 @@ Panel {
   readonly property color dim: Qt.darker(foreground, 1.4)
   readonly property string fontFamily: bar ? bar.fontFamily : Style.font.family
 
-  function open() { if (source) source.refresh(); root.controller.show() }
-  function close() { root.controller.hide() }
-  function toggle() { root.opened ? root.close() : root.open() }
+  function open() {
+    if (source)
+      source.refresh()
+    root.controller.show()
+  }
+  function close() {
+    root.controller.hide()
+  }
+  function toggle() {
+    root.opened ? root.close() : root.open()
+  }
   function switchPanel(direction) {
     if (root.bar && typeof root.bar.switchPanelFrom === "function")
       return root.bar.switchPanelFrom(root.barIdentity, direction)
@@ -42,8 +50,13 @@ Panel {
       id: keyCatcher
       anchors.fill: parent
       onCloseRequested: root.close()
-      onTabRequested: function(direction) { root.switchPanel(direction) }
-      onTextKey: function(text) { if (text === "r" && root.source) root.source.refresh() }
+      onTabRequested: function (direction) {
+        root.switchPanel(direction)
+      }
+      onTextKey: function (text) {
+        if (text === "r" && root.source)
+          root.source.refresh()
+      }
 
       // Small screens cap the card's height: scroll instead of cutting it off.
       Flickable {
@@ -84,7 +97,9 @@ Panel {
             textFormat: Text.PlainText // text from outside the shell is never rich text
           }
 
-          PanelSeparator { width: parent.width }
+          PanelSeparator {
+            width: parent.width
+          }
 
           Repeater {
             model: [["1 minute", 0], ["5 minutes", 1], ["15 minutes", 2]]

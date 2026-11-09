@@ -17,7 +17,8 @@ Item {
   readonly property real load: averages.length > 0 ? averages[0] : 0
 
   function refresh() {
-    if (!proc.running) proc.running = true
+    if (!proc.running)
+      proc.running = true
   }
 
   // argv array, never a shell string: no quoting bugs, no injection, and
@@ -25,10 +26,19 @@ Item {
   Process {
     id: proc
     command: ["cat", "/proc/loadavg"]
-    stdout: StdioCollector { id: out; waitForEnd: true }
-    stderr: StdioCollector { id: err; waitForEnd: true }
-    onExited: function(exitCode) {
-      if (exitCode !== 0) { root.error = String(err.text || "cat failed").trim(); return }
+    stdout: StdioCollector {
+      id: out
+      waitForEnd: true
+    }
+    stderr: StdioCollector {
+      id: err
+      waitForEnd: true
+    }
+    onExited: function (exitCode) {
+      if (exitCode !== 0) {
+        root.error = String(err.text || "cat failed").trim()
+        return
+      }
       var f = String(out.text).trim().split(/\s+/)
       root.averages = [Number(f[0]), Number(f[1]), Number(f[2])]
       root.running = f[3] || ""
@@ -50,7 +60,11 @@ Item {
   // omarchy-shell io.github.yourname.loadavg refresh
   IpcHandler {
     target: "io.github.yourname.loadavg"
-    function refresh(): void { root.refresh() }
-    function load(): string { return String(root.load) }
+    function refresh(): void {
+      root.refresh()
+    }
+    function load(): string {
+      return String(root.load)
+    }
   }
 }
