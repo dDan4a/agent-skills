@@ -7,13 +7,22 @@ Item {
   property string status: ""
 
   // Called from the widget after the user clicks "Install snapback".
-  function installCli() { run(["go", "install", cliModule]) }
-  function snapshot(path) { run(["snapback", "save", path]) }
+  function installCli() {
+    run(["go", "install", cliModule])
+  }
+  function snapshot(path) {
+    run(["snapback", "save", path])
+  }
 
-  function run(argv) { proc.command = argv; proc.running = true }
+  function run(argv) {
+    proc.command = argv
+    proc.running = true
+  }
 
   Process {
     id: proc
-    stdout: StdioCollector { onStreamFinished: root.status = this.text.trim() }
+    stdout: StdioCollector {
+      onStreamFinished: root.status = this.text.trim()
+    }
   }
 }

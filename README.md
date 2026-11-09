@@ -16,41 +16,64 @@ that read <a href="https://agentskills.io">Agent Skills</a>), each tested with e
 Click a card for details.
 
 <details>
-<summary><picture><source media="(prefers-color-scheme: dark)" srcset="assets/omarchy-plugin-dark.png"><img src="assets/omarchy-plugin-light.png" width="772" alt="omarchy-plugin: Write, debug and publish Omarchy shell plugins. Comes with a working template plugin."></picture></summary>
+<summary><picture><source media="(prefers-color-scheme: dark)"
+  srcset="assets/omarchy-plugin-dark.png"><img src="assets/omarchy-plugin-light.png" width="772"
+  alt="omarchy-plugin: Write, debug and publish Omarchy shell plugins. Comes with a working template plugin."></picture></summary>
 
-The manifest, services and bar widgets that work across several monitors, panels and the UI kit, IPC, settings, and what the plugin marketplace review asks for (no Qt text fields: text input goes through the bundled `LineEdit.qml`). It reads the installed sources first (`/usr/share/omarchy/shell/`) and treats them as the truth, so it keeps working as Omarchy changes.
+The manifest, services and bar widgets that work across several monitors, panels and the UI kit, IPC, settings, and what the plugin marketplace review
+asks for (no Qt text fields: text input goes through the bundled `LineEdit.qml`). It reads the installed sources first (`/usr/share/omarchy/shell/`)
+and treats them as the truth, so it keeps working as Omarchy changes.
 
 [SKILL.md](skills/omarchy-plugin/SKILL.md) · `/plugin install omarchy-plugin@dan4a-skills`
 </details>
 
 <details>
-<summary><picture><source media="(prefers-color-scheme: dark)" srcset="assets/parallel-worktrees-dark.png"><img src="assets/parallel-worktrees-light.png" width="772" alt="parallel-worktrees: Several agent sessions at once without collisions: one task = one branch = one git worktree = one session."></picture></summary>
+<summary><picture><source media="(prefers-color-scheme: dark)"
+  srcset="assets/parallel-worktrees-dark.png"><img src="assets/parallel-worktrees-light.png" width="772"
+  alt="parallel-worktrees: Several agent sessions at once without collisions: one task = one branch = one git worktree = one session."
+  ></picture></summary>
 
-Comes with `wt`, a script that creates task worktrees, hands a task off to a new session (in Herdr) and removes worktrees once their branch is merged, including squash merges, from a Claude Code `SessionEnd` hook. In Herdr it also closes a merged child's idle session with its workspace, and the repo's workspace after its last worktree.
+Comes with `wt`, a script that creates task worktrees, hands a task off to a new session (in Herdr) and removes worktrees once their branch is merged,
+including squash merges, from a Claude Code `SessionEnd` hook. In Herdr it also closes a merged child's idle session with its workspace, and the
+repo's workspace after its last worktree.
 
 [SKILL.md](skills/parallel-worktrees/SKILL.md) · `/plugin install parallel-worktrees@dan4a-skills`
 </details>
 
 <details>
-<summary><picture><source media="(prefers-color-scheme: dark)" srcset="assets/herdr-tabs-dark.png"><img src="assets/herdr-tabs-light.png" width="772" alt="herdr-tabs: Several ideas split into Herdr tabs, one agent per idea, each reporting back."></picture></summary>
+<summary><picture><source media="(prefers-color-scheme: dark)"
+  srcset="assets/herdr-tabs-dark.png"><img src="assets/herdr-tabs-light.png" width="772"
+  alt="herdr-tabs: Several ideas split into Herdr tabs, one agent per idea, each reporting back."></picture></summary>
 
-Tabs in the current workspace with names of an emoji type and a short topic (💡 idea, 🔧 task, 🔍 research), a self-contained brief for each agent, follow-ups sent to a topic's existing tab, and a 2–3 line report back to the session that opened them. Outside Herdr it writes the briefs to paste instead.
+Tabs in the current workspace with names of an emoji type and a short topic (💡 idea, 🔧 task, 🔍 research), a self-contained brief for each agent,
+follow-ups sent to a topic's existing tab, and a 2–3 line report back to the session that opened them. Outside Herdr it writes the briefs to paste
+instead.
 
 [SKILL.md](skills/herdr-tabs/SKILL.md) · `/plugin install herdr-tabs@dan4a-skills`
 </details>
 
 <details>
-<summary><picture><source media="(prefers-color-scheme: dark)" srcset="assets/github-readme-dark.png"><img src="assets/github-readme-light.png" width="772" alt="github-readme: A GitHub README that looks good and keeps working: native charts, alerts, light/dark images, honest badges."></picture></summary>
+<summary><picture><source media="(prefers-color-scheme: dark)"
+  srcset="assets/github-readme-dark.png"><img src="assets/github-readme-light.png" width="772"
+  alt="github-readme: A GitHub README that looks good and keeps working: native charts, alerts, light/dark images, honest badges."
+  ></picture></summary>
 
-What it is, a screenshot, install and use on the first screen; only what GitHub renders natively (tables as panels, alerts, `<details>`, Mermaid diagrams and `xychart-beta` charts built from the repo's data, `<picture>` for light and dark images); badges only for real state, no live third-party widgets; and a render check with `gh api markdown` before calling it done.
+What it is, a screenshot, install and use on the first screen; only what GitHub renders natively (tables as panels, alerts, `<details>`, Mermaid
+diagrams and `xychart-beta` charts built from the repo's data, `<picture>` for light and dark images); badges only for real state, no live third-party
+widgets; and a render check with `gh api markdown` before calling it done.
 
 [SKILL.md](skills/github-readme/SKILL.md) · `/plugin install github-readme@dan4a-skills`
 </details>
 
 <details>
-<summary><picture><source media="(prefers-color-scheme: dark)" srcset="assets/skill-evals-dark.png"><img src="assets/skill-evals-light.png" width="772" alt="skill-evals: Evals for your own skills: concrete checks, a sandbox per run, with and without the skill."></picture></summary>
+<summary><picture><source media="(prefers-color-scheme: dark)"
+  srcset="assets/skill-evals-dark.png"><img src="assets/skill-evals-light.png" width="772"
+  alt="skill-evals: Evals for your own skills: concrete checks, a sandbox per run, with and without the skill."></picture></summary>
 
-Every skill here is tested this way, and this skill shares how: `evals.json` in skill-creator's format with checks that can be decided from the transcript and the end state, a `sandbox.sh` per skill (fake CLIs that log calls and remember what they created, bare git remotes, a home of its own), a bundled `run-evals` that runs each prompt with and without the skill in Claude Code, isolated from your settings, then grading and comparing the two.
+Every skill here is tested this way, and this skill shares how: `evals.json` in skill-creator's format with checks that can be decided from the
+transcript and the end state, a `sandbox.sh` per skill (fake CLIs that log calls and remember what they created, bare git remotes, a home of its own),
+a bundled `run-evals` that runs each prompt with and without the skill in Claude Code, isolated from your settings, then grading and comparing the
+two.
 
 [SKILL.md](skills/skill-evals/SKILL.md) · `/plugin install skill-evals@dan4a-skills`
 </details>
@@ -68,7 +91,7 @@ npx skills add dDan4a/agent-skills --skill omarchy-plugin  # just this one
 
 Claude Code, as a plugin marketplace:
 
-```
+```text
 /plugin marketplace add dDan4a/agent-skills
 /plugin install omarchy-plugin@dan4a-skills
 /plugin install parallel-worktrees@dan4a-skills
@@ -100,7 +123,8 @@ Ask for what you want; the agent loads the skill when it fits:
 
 ## Evals
 
-Share of checks passed per skill, Claude Opus 5.5, one run per eval (2026-10-17). Each skill has two bars drawn over each other: the full one is with the skill, the inner one without.
+Share of checks passed per skill, Claude Opus 5.5, one run per eval (2026-10-17). Each skill has two bars drawn over each other: the full one is with
+the skill, the inner one without.
 
 ```mermaid
 xychart-beta
@@ -112,7 +136,7 @@ xychart-beta
 ```
 
 | Skill | With the skill | Without |
-|---|---:|---:|
+| --- | ---: | ---: |
 | `omarchy-plugin` 0.1.5 | 100% (32/32) | 56% (18/32) |
 | `parallel-worktrees` 0.1.4 | 100% (30/30) | 73% (22/30) |
 | `herdr-tabs` 0.1.0 | 100% (14/14) | 21% (3/14) |

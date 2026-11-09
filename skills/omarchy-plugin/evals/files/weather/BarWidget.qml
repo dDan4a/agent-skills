@@ -44,7 +44,9 @@ BarWidget {
   // omarchy-shell io.github.someone.weather refresh
   IpcHandler {
     target: "io.github.someone.weather"
-    function refresh(): void { fetch.running = true }
+    function refresh(): void {
+      fetch.running = true
+    }
   }
 
   WidgetButton {

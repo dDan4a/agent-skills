@@ -10,7 +10,9 @@ Panel {
   property var anchorItem: null
   property var hostWidget: null
   property var source: null
-  function toggle() { root.opened ? root.controller.hide() : root.controller.show() }
+  function toggle() {
+    root.opened ? root.controller.hide() : root.controller.show()
+  }
 
   KeyboardPanel {
     id: panel
@@ -27,13 +29,22 @@ Panel {
       width: parent.width
       Repeater {
         model: root.source ? root.source.notes : []
-        delegate: Text { text: modelData; color: Color.foreground; width: column.width; elide: Text.ElideRight }
+        delegate: Text {
+          text: modelData
+          color: Color.foreground
+          width: column.width
+          elide: Text.ElideRight
+        }
       }
       TextField {
         id: input
         width: column.width
         placeholderText: "New note"
-        onAccepted: { if (root.source) root.source.save(text); text = "" }
+        onAccepted: {
+          if (root.source)
+            root.source.save(text)
+          text = ""
+        }
       }
     }
   }

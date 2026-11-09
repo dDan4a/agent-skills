@@ -12,13 +12,16 @@ if [ "$cmd" = state ]; then
     [ -d "$d" ] || continue
     echo "=== plugin ${d#"$S"/}"
     echo "--- omarchy plugin validate: $(omarchy plugin validate "$d" 2>&1 && echo OK)"
-    find "$d" -type f -o -type l | sort | while read -r f; do echo "--- ${f#"$d"} ($(stat -c %a "$f"))"; cat "$f"; done
+    find "$d" -type f -o -type l | sort | while read -r f; do
+      echo "--- ${f#"$d"} ($(stat -c %a "$f"))"
+      cat "$f"
+    done
   done
   exit 0
 fi
 
 mkdir -p "$PL"
-: > "$S/env.sh"
+: >"$S/env.sh"
 case $id in
   2) cp -r "$files/weather" "$PL/io.github.someone.weather" ;;
   3) cp -r "$files/clipnote" "$PL/io.github.someone.clipnote" ;;

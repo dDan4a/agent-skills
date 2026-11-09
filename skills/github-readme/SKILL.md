@@ -31,7 +31,7 @@ GitHub sanitizes README HTML: no `<style>`, `style=""`, `class`, scripts,
 iframes or custom fonts/colors. What survives is the toolbox:
 
 | Need | Use |
-|---|---|
+| --- | --- |
 | Centered header, logo | `<p align="center">` / `<div align="center">` with `<img>` and `<h1>` |
 | Panels, feature grid, comparison | Markdown tables; an HTML `<table>` only for a grid of images |
 | Callouts | `> [!NOTE]`, `[!TIP]`, `[!IMPORTANT]`, `[!WARNING]`, `[!CAUTION]`; one or two per page |
@@ -52,6 +52,7 @@ from memory. Show the numbers you have, label units, start bar axes at zero.
 
 - **Few values, simple chart** (≤ ~12 bars or points): Mermaid `xychart-beta`.
   Renders natively, diffs as text, follows the theme.
+
   ```mermaid
   xychart-beta
     title "Checks passed, %"
@@ -60,6 +61,7 @@ from memory. Show the numbers you have, label units, start bar axes at zero.
     bar [100, 100, 100]
     bar [64, 55, 43]
   ```
+
   Several `bar` series are drawn over each other, not side by side: put the larger series first, and since
   Mermaid has no legend, say in the title or a line below which bar is which.
 - **More than Mermaid can show** (grouped bars with a legend, many series,

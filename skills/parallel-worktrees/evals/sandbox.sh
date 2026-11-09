@@ -4,25 +4,43 @@
 #   sandbox.sh state <dir>             dump what the grader needs
 set -euo pipefail
 cmd=$1 id=${3:-}
-mkdir -p "$2"; S=$(cd "$2" && pwd -P)
+mkdir -p "$2"
+S=$(cd "$2" && pwd -P)
 skill=$(dirname "$(dirname "$(realpath "$0")")")
 P=$S/projects
 
 git_() { git -c user.name=Test -c user.email=test@example.com -c init.defaultBranch=main "$@"; }
 
 if [ "$cmd" = state ]; then
-  echo "== worktrees"; for r in "$P"/acme/*/; do echo "-- ${r%/}"; git -C "$r" worktree list; git -C "$r" branch --format='%(refname:short)'; done
-  echo "== main checkout branches"; for r in "$P"/acme/*/; do echo "$(basename "$r"): $(git -C "$r" branch --show-current) $(git -C "$r" status --porcelain | wc -l) dirty"; done
-  echo "== files under acme/.worktrees"; { find "$P/acme/.worktrees" -maxdepth 4 -not -path '*/.git*' 2>/dev/null || true; } | sed "s|$S/||" | sort
-  [ -d "$S/work/shop" ] && { echo "== work/shop"; for r in "$S"/work/shop/*/; do echo "-- ${r%/}"; git -C "$r" worktree list; git -C "$r" status --porcelain; done; }
-  echo "== herdr calls"; cat "$S/herdr.log" 2>/dev/null || echo none
-  echo "== ~/dotfiles/claude/settings.json"; cat "$S/home/dotfiles/claude/settings.json" 2>/dev/null || echo none
-  echo "== wt on PATH"; ls -l "$S/home/.local/bin/" 2>/dev/null || true
+  echo "== worktrees"
+  for r in "$P"/acme/*/; do
+    echo "-- ${r%/}"
+    git -C "$r" worktree list
+    git -C "$r" branch --format='%(refname:short)'
+  done
+  echo "== main checkout branches"
+  for r in "$P"/acme/*/; do echo "$(basename "$r"): $(git -C "$r" branch --show-current) $(git -C "$r" status --porcelain | wc -l) dirty"; done
+  echo "== files under acme/.worktrees"
+  { find "$P/acme/.worktrees" -maxdepth 4 -not -path '*/.git*' 2>/dev/null || true; } | sed "s|$S/||" | sort
+  [ -d "$S/work/shop" ] && {
+    echo "== work/shop"
+    for r in "$S"/work/shop/*/; do
+      echo "-- ${r%/}"
+      git -C "$r" worktree list
+      git -C "$r" status --porcelain
+    done
+  }
+  echo "== herdr calls"
+  cat "$S/herdr.log" 2>/dev/null || echo none
+  echo "== ~/dotfiles/claude/settings.json"
+  cat "$S/home/dotfiles/claude/settings.json" 2>/dev/null || echo none
+  echo "== wt on PATH"
+  ls -l "$S/home/.local/bin/" 2>/dev/null || true
   exit 0
 fi
 
 mkdir -p "$S/home/.local/bin" "$S/bin" "$S/origin" "$P/acme"
-cat > "$S/env.sh" <<ENV
+cat >"$S/env.sh" <<ENV
 export WT_ROOT=$P PATH=$S/home/.local/bin:$S/bin:\$PATH
 export GIT_AUTHOR_NAME=Test GIT_AUTHOR_EMAIL=test@example.com GIT_COMMITTER_NAME=Test GIT_COMMITTER_EMAIL=test@example.com
 ENV
@@ -30,9 +48,11 @@ ENV
 for repo in api web; do
   git_ init -q --bare "$S/origin/$repo.git"
   git_ clone -q "$S/origin/$repo.git" "$P/acme/$repo" 2>/dev/null
-  ( cd "$P/acme/$repo"
-    mkdir -p src; echo "package main // $repo" > src/main.go
-    [ $repo = api ] && cat > src/login.go <<'GO'
+  (
+    cd "$P/acme/$repo"
+    mkdir -p src
+    echo "package main // $repo" >src/main.go
+    [ $repo = api ] && cat >src/login.go <<'GO'
 package main
 
 import "net/http"
@@ -49,12 +69,15 @@ func login(w http.ResponseWriter, r *http.Request) {
 
 var users = map[string]string{"alice": "s3cret"}
 GO
-    git_ add -A; git_ commit -qm init; git_ push -q origin main
-    git remote set-head origin main )
+    git_ add -A
+    git_ commit -qm init
+    git_ push -q origin main
+    git remote set-head origin main
+  )
 done
 
 # A stand-in for Herdr: logs every call, does what `wt` relies on.
-cat > "$S/bin/herdr" <<STUB
+cat >"$S/bin/herdr" <<STUB
 #!/usr/bin/env bash
 printf 'herdr %s\n' "\$*" >> "$S/herdr.log"
 case "\$1 \$2" in
@@ -75,39 +98,57 @@ case $id in
   4)
     # In dotfiles: Claude Code will not let a session edit its own ~/.claude/settings.json.
     mkdir -p "$S/home/.claude" "$S/home/dotfiles/claude"
-    echo '{ "model": "opus", "permissions": { "allow": ["Bash(git status:*)"] } }' > "$S/home/dotfiles/claude/settings.json"
-    ln -s ../dotfiles/claude/settings.json "$S/home/.claude/settings.json" ;;
-  2) echo "export HERDR_ENV=1" >> "$S/env.sh" ;;
+    echo '{ "model": "opus", "permissions": { "allow": ["Bash(git status:*)"] } }' >"$S/home/dotfiles/claude/settings.json"
+    ln -s ../dotfiles/claude/settings.json "$S/home/.claude/settings.json"
+    ;;
+  2) echo "export HERDR_ENV=1" >>"$S/env.sh" ;;
   3)
     cd "$P/acme/api"
     W=$P/acme/.worktrees/api
     new() { git_ worktree add -q --no-track -b "$1" "$W/$1" origin/main; }
-    commit() { echo "$2" >> "$W/$1/src/${1//\//-}.txt"; git_ -C "$W/$1" add -A; git_ -C "$W/$1" commit -qm "$1: $2"; }
-    new fix/merged;   commit fix/merged a; git_ -C "$W/fix/merged" push -q origin fix/merged:main
-    new feat/squashed; commit feat/squashed a; commit feat/squashed b
-    tmp=$S/squash; git_ clone -q "$S/origin/api.git" "$tmp" 2>/dev/null
+    commit() {
+      echo "$2" >>"$W/$1/src/${1//\//-}.txt"
+      git_ -C "$W/$1" add -A
+      git_ -C "$W/$1" commit -qm "$1: $2"
+    }
+    new fix/merged
+    commit fix/merged a
+    git_ -C "$W/fix/merged" push -q origin fix/merged:main
+    new feat/squashed
+    commit feat/squashed a
+    commit feat/squashed b
+    tmp=$S/squash
+    git_ clone -q "$S/origin/api.git" "$tmp" 2>/dev/null
     git_ -C "$tmp" fetch -q "$W/feat/squashed" feat/squashed && git_ -C "$tmp" merge -q --squash FETCH_HEAD >/dev/null && git_ -C "$tmp" commit -qm "feat: squashed (#2)" && git_ -C "$tmp" push -q origin main
     rm -rf "$tmp"
-    new feat/wip;     commit feat/wip a
-    new fix/dirty;    commit fix/dirty a; git_ -C "$W/fix/dirty" pull -q --rebase origin main; git_ -C "$W/fix/dirty" push -q origin HEAD:main
-    echo "unsaved" > "$W/fix/dirty/notes.txt"
+    new feat/wip
+    commit feat/wip a
+    new fix/dirty
+    commit fix/dirty a
+    git_ -C "$W/fix/dirty" pull -q --rebase origin main
+    git_ -C "$W/fix/dirty" push -q origin HEAD:main
+    echo "unsaved" >"$W/fix/dirty/notes.txt"
     new feat/empty
     ;;
   5)
     # Two handed-off tasks in acme/web, each with an agent in its own Herdr workspace: feat/search is finished
     # (agent idle), feat/busy is already merged but its agent is still working.
-    echo "export HERDR_ENV=1" >> "$S/env.sh"
+    echo "export HERDR_ENV=1" >>"$S/env.sh"
     cd "$P/acme/web"
     W=$P/acme/.worktrees/web
     git_ worktree add -q --no-track -b feat/search "$W/feat/search" origin/main
-    echo "search" > "$W/feat/search/src/search.go"; git_ -C "$W/feat/search" add -A; git_ -C "$W/feat/search" commit -qm "feat: search"
+    echo "search" >"$W/feat/search/src/search.go"
+    git_ -C "$W/feat/search" add -A
+    git_ -C "$W/feat/search" commit -qm "feat: search"
     git_ worktree add -q --no-track -b feat/busy "$W/feat/busy" origin/main
-    echo "busy" > "$W/feat/busy/src/busy.go"; git_ -C "$W/feat/busy" add -A; git_ -C "$W/feat/busy" commit -qm "feat: busy"
+    echo "busy" >"$W/feat/busy/src/busy.go"
+    git_ -C "$W/feat/busy" add -A
+    git_ -C "$W/feat/busy" commit -qm "feat: busy"
     git_ -C "$W/feat/busy" push -q origin HEAD:main
-    cat > "$S/herdr-worktrees.json" <<JSON
+    cat >"$S/herdr-worktrees.json" <<JSON
 {"result":{"worktrees":[{"path":"$W/feat/search","open_workspace_id":"w-7"},{"path":"$W/feat/busy","open_workspace_id":"w-8"}]}}
 JSON
-    cat > "$S/herdr-agents.json" <<'JSON'
+    cat >"$S/herdr-agents.json" <<'JSON'
 {"result":{"agents":[{"name":"feat-search","agent":"claude","agent_status":"idle","workspace_id":"w-7","pane_id":"w-7:p1"},
  {"name":"feat-busy","agent":"claude","agent_status":"working","workspace_id":"w-8","pane_id":"w-8:p1"}]}}
 JSON
@@ -119,26 +160,36 @@ JSON
     for repo in app lib; do
       git_ init -q --bare "$S/origin/shop-$repo.git"
       git_ clone -q "$S/origin/shop-$repo.git" "$W/$repo" 2>/dev/null
-      ( cd "$W/$repo"
-        echo "# $repo" > README.md; printf '.env\n.wt.conf\n' > .gitignore
-        git_ add -A; git_ commit -qm init; git_ push -q origin main
-        branch=develop; [ $repo = lib ] && branch=stable
-        git_ checkout -qb $branch; echo "$branch work" > $branch.txt; git_ add -A; git_ commit -qm "$branch work"
-        git_ push -q origin $branch; git_ checkout -q main
-        git remote set-head origin main )
+      (
+        cd "$W/$repo"
+        echo "# $repo" >README.md
+        printf '.env\n.wt.conf\n' >.gitignore
+        git_ add -A
+        git_ commit -qm init
+        git_ push -q origin main
+        branch=develop
+        [ $repo = lib ] && branch=stable
+        git_ checkout -qb $branch
+        echo "$branch work" >$branch.txt
+        git_ add -A
+        git_ commit -qm "$branch work"
+        git_ push -q origin $branch
+        git_ checkout -q main
+        git remote set-head origin main
+      )
     done
-    cat > "$W/.wt.conf" <<'CONF'
+    cat >"$W/.wt.conf" <<'CONF'
 BASE=develop
 TASK_RE='SHOP-[0-9]+'
 link_local_files() {
   case $1 in app) ln -sfn "$2/.env" "$3/.env" ;; esac
 }
 CONF
-    echo "SECRET=1" > "$W/app/.env"
-    echo "BASE=stable" > "$W/lib/.wt.conf"
+    echo "SECRET=1" >"$W/app/.env"
+    echo "BASE=stable" >"$W/lib/.wt.conf"
     ;;
 esac
 cd "$P"
 # Eval 5 starts in the group, not in acme/web: Claude Code's sandbox mounts over the cwd repo's .git, so removing
 # .git/worktrees/<name> there fails with "Device or resource busy".
-case $id in 1|2) echo "$P/acme/api" ;; 5) echo "$P/acme" ;; 6) echo "$S/work/shop/app" ;; *) echo "$P" ;; esac
+case $id in 1 | 2) echo "$P/acme/api" ;; 5) echo "$P/acme" ;; 6) echo "$S/work/shop/app" ;; *) echo "$P" ;; esac

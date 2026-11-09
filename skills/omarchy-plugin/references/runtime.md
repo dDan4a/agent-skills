@@ -10,7 +10,7 @@ The shell sets a property only if your root object declares it
 (`property var shell: null` and so on).
 
 | Entry point | Injected |
-|---|---|
+| --- | --- |
 | bar widget | `bar` (a `PluginBarApi`), `moduleName` (the entry id), `settings` (the layout entry minus `id`; re-set when it changes) |
 | service | `omarchyPath`, `shell`, `manifest`, `pluginRegistry`, `barWidgetRegistry` |
 | panel / overlay / menu | the service list, plus `service` (= your own service, if any) |
@@ -22,7 +22,7 @@ public copy with internal fields removed.
 ## `shell` (PluginShellApi)
 
 | Member | Notes |
-|---|---|
+| --- | --- |
 | `pluginId` | |
 | `serviceFor(id)` | **Your own id only** (or the built-in you were cloned from); null otherwise, and null until the service exists. Bindings that call it update when it appears. |
 | `summon(id, payloadJson)`, `hide(id)`, `toggle(id, payloadJson)`, `isPluginOpen(id)` | Own id only (bar plugins: configured UI plugins). |

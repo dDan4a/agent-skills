@@ -36,7 +36,7 @@ Source of truth: `/usr/share/omarchy/shell/services/PluginRegistry.qml`
 ## Fields
 
 | Field | Rules |
-|---|---|
+| --- | --- |
 | `schemaVersion` | The number `1`. A string `"1"` is rejected. |
 | `id` | Required. `^[a-z0-9][a-z0-9._-]*$` (the marketplace requires lowercase), no `..`, not `omarchy.*` (reserved), not a first-party id. The install directory must have the same name. Permanent once published. |
 | `name`, `version` | Required, non-empty. |
@@ -53,7 +53,7 @@ There are no `permissions`, `dependencies` or `minShellVersion` fields.
 ### Kinds
 
 | Kind | entryPoints key | Instances |
-|---|---|---|
+| --- | --- | --- |
 | `service` | `service` | One, created when the plugin is enabled. Headless. |
 | `bar-widget` | `barWidget` | One per monitor (one per layout entry per monitor). |
 | `panel` | `panel` | One, loaded when summoned (or always with `keepLoaded`). |
@@ -67,7 +67,7 @@ wins, then `overlay`, then `menu`.
 ### barWidget block
 
 | Key | Meaning |
-|---|---|
+| --- | --- |
 | `displayName` | Name in the widget picker; falls back to `name`. |
 | `description` | Falls back to the manifest `description`. |
 | `category` | Free string, default `"Plugin"`. Common: System, Hardware, Media, Network, Status, Time, Monitoring, AI. |
@@ -82,7 +82,7 @@ wins, then `overlay`, then `menu`.
 All entries: `key`, `type`, `label`, optional `description` and `defaultValue`.
 
 | `type` | Extra fields |
-|---|---|
+| --- | --- |
 | `string` | none |
 | `path` | none (a file or directory path) |
 | `integer` | `min`, `max`, `step` |
@@ -96,7 +96,7 @@ with `setting(key, fallback)` every time.
 ## Commands
 
 | Command | Does |
-|---|---|
+| --- | --- |
 | `omarchy plugin validate <dir>` | The checks above, plus: the files exist, each kind has its entry point, **no symlinks** anywhere. Exit 0 when valid. |
 | `omarchy plugin add <git-url> [--enable] [--yes]` | Clones, validates, moves to `plugins/<id>`, rescans. Never runs plugin code. Needs `--yes` without a TTY. |
 | `omarchy plugin update [<id>] [--yes]` | Fetch, show the diff, fast-forward, re-validate (rolls back on failure). Git checkouts only. |

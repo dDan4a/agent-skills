@@ -1,5 +1,6 @@
+pragma ComponentBehavior: Bound
+
 import QtQuick
-import Quickshell
 import qs.Commons
 import qs.Ui
 
@@ -19,9 +20,17 @@ Panel {
   readonly property color dim: Qt.darker(foreground, 1.4)
   readonly property string fontFamily: bar ? bar.fontFamily : Style.font.family
 
-  function open() { if (source) source.refresh(); root.controller.show() }
-  function close() { root.controller.hide() }
-  function toggle() { root.opened ? root.close() : root.open() }
+  function open() {
+    if (source)
+      source.refresh()
+    root.controller.show()
+  }
+  function close() {
+    root.controller.hide()
+  }
+  function toggle() {
+    root.opened ? root.close() : root.open()
+  }
   function switchPanel(direction) {
     if (root.bar && typeof root.bar.switchPanelFrom === "function")
       return root.bar.switchPanelFrom(root.barIdentity, direction)
@@ -42,8 +51,13 @@ Panel {
       id: keyCatcher
       anchors.fill: parent
       onCloseRequested: root.close()
-      onTabRequested: function(direction) { root.switchPanel(direction) }
-      onTextKey: function(text) { if (text === "r" && root.source) root.source.refresh() }
+      onTabRequested: function (direction) {
+        root.switchPanel(direction)
+      }
+      onTextKey: function (text) {
+        if (text === "r" && root.source)
+          root.source.refresh()
+      }
 
       // Small screens cap the card's height: scroll instead of cutting it off.
       Flickable {
@@ -84,24 +98,27 @@ Panel {
             textFormat: Text.PlainText // text from outside the shell is never rich text
           }
 
-          PanelSeparator { width: parent.width }
+          PanelSeparator {
+            width: parent.width
+          }
 
           Repeater {
             model: [["1 minute", 0], ["5 minutes", 1], ["15 minutes", 2]]
             delegate: Item {
+              id: row
               required property var modelData
               width: column.width
               height: label.implicitHeight
               Text {
                 id: label
-                text: modelData[0]
+                text: row.modelData[0]
                 color: root.foreground
                 font.family: root.fontFamily
                 font.pixelSize: Style.font.body
               }
               Text {
                 anchors.right: parent.right
-                text: root.source && root.source.averages.length > 2 ? root.source.averages[modelData[1]].toFixed(2) : "…"
+                text: root.source && root.source.averages.length > 2 ? root.source.averages[row.modelData[1]].toFixed(2) : "…"
                 color: root.foreground
                 font.family: root.fontFamily
                 font.pixelSize: Style.font.body

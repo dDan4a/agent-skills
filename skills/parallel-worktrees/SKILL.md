@@ -13,7 +13,7 @@ exactly one session works there.
 
 ## Layout
 
-```
+```text
 <project>/                      # any folder; one per client or kind of work
   .wt.conf                      # optional local settings for all its repos (bash, not in git), see references/setup.md
   <repo>/                       # main checkout, stays on the default branch
@@ -35,10 +35,12 @@ to run for each new worktree).
 - **Start a task with `wt new`**, not `git worktree add` or the agent's own
   worktree feature: `wt` puts the worktree where cleanup finds it and links
   the untracked files `.wt.conf` lists.
+
   ```bash
   wt new . <branch>                # inside the repo; prints the worktree path, then work there
   wt new <path-or-repo> <branch>   # a repo's path, or the name of a repo next to the current one
   ```
+
   It branches from the remote's default branch (or `BASE` from `.wt.conf`)
   after a fetch. Run every later command in the printed path.
 - **Branch names:** the tracker's id when there is one (`PROJ-431.short-desc`),

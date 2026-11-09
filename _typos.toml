@@ -1,0 +1,5 @@
+[default]
+extend-ignore-re = ["Plugins should recieve events over IPC", "fix the typo 'recieve'"]
+
+[default.extend-identifiers]
+PNGs = "PNGs"

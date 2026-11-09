@@ -3,10 +3,16 @@
 # brief to each, the compare commands in the output; bad input creates nothing. Run: bash evals/fan-test.sh
 set -euo pipefail
 here=$(dirname "$(realpath "$0")")
-S=$(mktemp -d); trap 'rm -rf "$S"' EXIT
+S=$(mktemp -d)
+trap 'rm -rf "$S"' EXIT
 "$here/sandbox.sh" setup "$S" 0 >/dev/null
-. "$S/env.sh"; export HERDR_ENV=1
-fail() { echo "FAIL: $*"; exit 1; }
+# shellcheck source=/dev/null
+. "$S/env.sh"
+export HERDR_ENV=1
+fail() {
+  echo "FAIL: $*"
+  exit 1
+}
 W=$WT_ROOT/acme/.worktrees/api
 
 out=$(echo "rename login to signIn" | wt fan acme/api feat/x -n 3 --agent claude,codex --brief - 2>"$S/err")
@@ -24,11 +30,12 @@ for bad in "-n 1" "-n x" "-n 2 --agent claude,gpt" "-n 2 --agent claude --nope";
 done
 wt fan acme/api feat/a-branch-name-too-long-for-herdr -n 2 --agent claude </dev/null >/dev/null 2>&1 || fail "rejected a long name"
 long=$(grep '^herdr agent start' "$S/herdr.log" | awk '{print $4}' | tail -2)
-[ "$(sort -u <<<"$long" | wc -l)" = 2 ] && ! grep -qE '.{33}' <<<"$long" || fail "long names collide or exceed 32: $long"
+[ "$(sort -u <<<"$long" | wc -l)" = 2 ] || fail "long names collide: $long"
+! grep -qE '.{33}' <<<"$long" || fail "long names exceed 32: $long"
 wt new acme/web feat/x-1 --agent claude </dev/null >/dev/null 2>&1 || fail "same branch in another repo"
 grep -q '^herdr agent start web-feat-x-1 ' "$S/herdr.log" || fail "same branch in another repo: $(tail -1 "$S/herdr.log")"
 env -u HERDR_ENV wt fan acme/api feat/bad -n 2 --agent claude </dev/null >/dev/null 2>&1 && fail "accepted --agent without Herdr"
-[ -z "$(ls "$W/feat" | grep -v '^x-\|^a-branch')" ] || fail "bad input created worktrees: $(ls "$W/feat")"
+[ -z "$(find "$W/feat" -mindepth 1 -maxdepth 1 ! -name 'x-*' ! -name 'a-branch*')" ] || fail "bad input created worktrees: $(ls "$W/feat")"
 
 out=$(env -u HERDR_ENV wt fan acme/api feat/plain -n 2 2>/dev/null)
 [ "$out" = "$(printf '%s\n' "$W/feat/plain-1" "$W/feat/plain-2")" ] || fail "without --agent: $out"

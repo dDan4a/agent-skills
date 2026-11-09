@@ -25,7 +25,7 @@ knows; a quick read-through does more there.
 
 Evals live inside the skill, so they ship with it (a few KB):
 
-```
+```text
 <skill>/
   SKILL.md
   evals/
@@ -64,13 +64,14 @@ A grader reads three things: `transcript.md` (every tool call and result),
 them by someone who has not read the skill.
 
 | Vague | Checkable |
-|---|---|
+| --- | --- |
 | Opens tabs with good names | The herdr log shows exactly three `tab create` calls; the AUR one's label starts with 🔍 |
 | Cleans up properly | The fix/merged worktree and branch are gone; fix/dirty still exists with notes.txt intact |
 | Handles errors well | The CLI restores the file with mode 0600 and refuses a path containing `..` (state shows both) |
 | Writes a good README | The README keeps every install command from the original (diff in state) |
 
 Include:
+
 - **Negative checks.** "Did not run `rm -rf`", "notes/ideas.md is unchanged",
   "no file in acme/web was changed". Agents without a skill fail most often by
   doing too much.
@@ -85,7 +86,7 @@ the check accepts both; a check stricter than the skill fails good runs.
 
 One script, two commands. The runner calls it for every run:
 
-```
+```text
 sandbox.sh setup <dir> <eval-id>   build the world in <dir>, write <dir>/env.sh, print the session's cwd
 sandbox.sh state <dir>             print everything the grader needs about the end state
 ```

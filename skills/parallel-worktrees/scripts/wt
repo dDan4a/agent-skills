@@ -42,15 +42,29 @@ SYNC=0 DRY_RUN=0 NO_FETCH=0
 REPO="" WT_DIR="" BASE="" REMOTE=origin INTEGRATION="" TASK_RE="" PROJECTS=()
 
 say() { echo "wt: $*" >&2; }
-notify() { command -v notify-send >/dev/null && notify-send -a "Worktrees" "$1" "${2:-}"; say "$1 ${2:-}"; }
+notify() {
+  command -v notify-send >/dev/null && notify-send -a "Worktrees" "$1" "${2:-}"
+  say "$1 ${2:-}"
+}
 abspath() { (cd "$1" 2>/dev/null && pwd -P); }
 # GNU timeout where there is one (stock macOS has none).
-maybe_timeout() { if command -v timeout >/dev/null; then timeout "$@"; else shift; "$@"; fi; }
+maybe_timeout() {
+  if command -v timeout >/dev/null; then
+    timeout "$@"
+  else
+    shift
+    "$@"
+  fi
+}
 
-ROOT=""; [ -n "${WT_ROOT:-}" ] && ROOT=$(abspath "$WT_ROOT")
+ROOT=""
+[ -n "${WT_ROOT:-}" ] && ROOT=$(abspath "$WT_ROOT")
 
 # main_of <path>: the main checkout of the repo or worktree at path.
-main_of() { local d; d=$(git -C "$1" rev-parse --path-format=absolute --git-common-dir 2>/dev/null) && dirname "$d"; }
+main_of() {
+  local d
+  d=$(git -C "$1" rev-parse --path-format=absolute --git-common-dir 2>/dev/null) && dirname "$d"
+}
 
 # load_repo <main checkout>: sets REPO, WT_DIR and the repo's settings: the project's .wt.conf, then the
 # repo's own one from the main checkout.
@@ -58,7 +72,9 @@ load_repo() {
   REPO=$(basename "$1") WT_DIR="$(dirname "$1")/.worktrees"
   BASE="" REMOTE=origin INTEGRATION="" TASK_RE=""
   link_local_files() { :; }
+  # shellcheck source=/dev/null
   [ -f "$(dirname "$1")/.wt.conf" ] && . "$(dirname "$1")/.wt.conf"
+  # shellcheck source=/dev/null
   [ -f "$1/.wt.conf" ] && . "$1/.wt.conf"
   return 0
 }
@@ -66,10 +82,17 @@ load_repo() {
 # project_of <dir>: the project dir is in, the parent of the first repo or worktree found going up, or a folder
 # with .worktrees. Stops at $WT_ROOT, which may be a repo itself.
 project_of() {
-  local d; d=$(abspath "$1") || return 1
+  local d
+  d=$(abspath "$1") || return 1
   while [ "$d" != / ] && [ "$d" != "$ROOT" ]; do
-    [ -e "$d/.git" ] && { d=$(main_of "$d") && dirname "$d"; return; }
-    [ -d "$d/.worktrees" ] && { echo "$d"; return; }
+    [ -e "$d/.git" ] && {
+      d=$(main_of "$d") && dirname "$d"
+      return
+    }
+    [ -d "$d/.worktrees" ] && {
+      echo "$d"
+      return
+    }
     d=$(dirname "$d")
   done
   return 1
@@ -78,12 +101,20 @@ project_of() {
 # projects [dir]: sets PROJECTS, what sync, list and clean --all work on.
 projects() {
   local d=${1:-.} p
-  [ -n "${1:-}" ] && [ ! -d "$d" ] && [ -n "$ROOT" ] && d=$ROOT/$1       # a group under $WT_ROOT
-  [ -d "$d" ] || { say "no directory $1"; exit 1; }
-  if p=$(project_of "$d"); then PROJECTS=("$p")
+  [ -n "${1:-}" ] && [ ! -d "$d" ] && [ -n "$ROOT" ] && d=$ROOT/$1 # a group under $WT_ROOT
+  [ -d "$d" ] || {
+    say "no directory $1"
+    exit 1
+  }
+  if p=$(project_of "$d"); then
+    PROJECTS=("$p")
   elif [ -n "$ROOT" ] && { [ -z "${1:-}" ] || [ "$(abspath "$d")" = "$ROOT" ]; }; then
-    PROJECTS=(); for p in "$ROOT"/*/; do PROJECTS+=("${p%/}"); done
-  else say "no project at $d: run inside a repo or name the folder that holds its .worktrees"; exit 1; fi
+    PROJECTS=()
+    for p in "$ROOT"/*/; do PROJECTS+=("${p%/}"); done
+  else
+    say "no project at $d: run inside a repo or name the folder that holds its .worktrees"
+    exit 1
+  fi
 }
 
 # repo_dir <spec>: the main checkout `wt new` works on.
@@ -91,14 +122,20 @@ repo_dir() {
   local here d
   here=$(project_of .) || here=""
   for d in "$1" ${here:+"$here/$1"} ${ROOT:+"$ROOT/$1"}; do
-    [ -e "$d/.git" ] && { main_of "$d"; return; }
+    [ -e "$d/.git" ] && {
+      main_of "$d"
+      return
+    }
   done
   return 1
 }
 
 # base_of <repo dir>: the branch tasks start from and merge into.
 base_of() {
-  [ -n "$BASE" ] && { echo "$BASE"; return; }
+  [ -n "$BASE" ] && {
+    echo "$BASE"
+    return
+  }
   local head
   head=$(git -C "$1" symbolic-ref --quiet --short "refs/remotes/$REMOTE/HEAD" 2>/dev/null) ||
     head=$(git -C "$1" remote set-head "$REMOTE" --auto >/dev/null 2>&1 && git -C "$1" symbolic-ref --quiet --short "refs/remotes/$REMOTE/HEAD")
@@ -106,31 +143,70 @@ base_of() {
 }
 
 cmd_new() {
-  local spec=${1:?usage: wt new <repo> <branch>} branch=${2:?usage: wt new <repo> <branch>}; shift 2
+  local spec=${1:?usage: wt new <repo> <branch>} branch=${2:?usage: wt new <repo> <branch>}
+  shift 2
   local agent="" role="" brief="" focus=--no-focus
   while [ $# -gt 0 ]; do
     case $1 in
-      --agent) agent=${2:?--agent needs claude or codex}; shift 2 ;;
-      --role) role=${2:?--role needs a name}; shift 2 ;;
-      --brief) brief=${2:?--brief needs a file or -}; shift 2 ;;
-      --focus) focus=--focus; shift ;;
-      *) say "unknown option $1"; exit 1 ;;
+      --agent)
+        agent=${2:?--agent needs claude or codex}
+        shift 2
+        ;;
+      --role)
+        role=${2:?--role needs a name}
+        shift 2
+        ;;
+      --brief)
+        brief=${2:?--brief needs a file or -}
+        shift 2
+        ;;
+      --focus)
+        focus=--focus
+        shift
+        ;;
+      *)
+        say "unknown option $1"
+        exit 1
+        ;;
     esac
   done
   if [ -n "$role" ]; then
-    [[ $role =~ ^[a-z][a-z0-9-]*$ ]] || { say "bad role name '$role': lowercase letters, digits and '-', starting with a letter"; exit 1; }
-    [ -n "$agent" ] || { say "--role needs --agent claude"; exit 1; }
-    [ "$agent" = claude ] || { say "roles are Claude Code only (--agent claude)"; exit 1; }
+    [[ $role =~ ^[a-z][a-z0-9-]*$ ]] || {
+      say "bad role name '$role': lowercase letters, digits and '-', starting with a letter"
+      exit 1
+    }
+    [ -n "$agent" ] || {
+      say "--role needs --agent claude"
+      exit 1
+    }
+    [ "$agent" = claude ] || {
+      say "roles are Claude Code only (--agent claude)"
+      exit 1
+    }
   fi
   local src
-  src=$(repo_dir "$spec") || { say "no repo '$spec': give its path (. inside it), a repo next to this one or <group>/<repo> under \$WT_ROOT"; exit 1; }
+  src=$(repo_dir "$spec") || {
+    say "no repo '$spec': give its path (. inside it), a repo next to this one or <group>/<repo> under \$WT_ROOT"
+    exit 1
+  }
   load_repo "$src"
   local dst="$WT_DIR/$REPO/$branch"
-  [ -e "$dst" ] && { say "already exists: $dst"; echo "$dst"; exit 0; }
-  [ -n "$agent" ] && [ "${HERDR_ENV:-}" != 1 ] && { say "--agent needs Herdr (HERDR_ENV=1)"; exit 1; }
+  [ -e "$dst" ] && {
+    say "already exists: $dst"
+    echo "$dst"
+    exit 0
+  }
+  [ -n "$agent" ] && [ "${HERDR_ENV:-}" != 1 ] && {
+    say "--agent needs Herdr (HERDR_ENV=1)"
+    exit 1
+  }
 
-  local base; base=$(base_of "$src")
-  [ -n "$base" ] || { say "cannot tell the base branch of $src; set BASE in .wt.conf"; exit 1; }
+  local base
+  base=$(base_of "$src")
+  [ -n "$base" ] || {
+    say "cannot tell the base branch of $src; set BASE in .wt.conf"
+    exit 1
+  }
   git -C "$src" fetch --quiet "$REMOTE" "$base" || say "fetch failed, using local $REMOTE/$base"
   mkdir -p "$(dirname "$dst")"
   local pane=""
@@ -155,7 +231,7 @@ cmd_new() {
   # Herdr agent names: lowercase letters, digits, '-', '_', starting with a letter, max 32, unique. The repo tells the same
   # branch in two repos apart; a long name ends in a hash of the whole, as its cut tail may be what tells it apart.
   local name
-  name=$(tr 'A-Z' 'a-z' <<<"$REPO-$branch" | sed 's/[^a-z0-9_-]/-/g; s/^[^a-z]*//')
+  name=$(tr '[:upper:]' '[:lower:]' <<<"$REPO-$branch" | sed 's/[^a-z0-9_-]/-/g; s/^[^a-z]*//')
   [ ${#name} -le 32 ] || name="$(cut -c1-27 <<<"$name" | sed 's/-*$//')-$(printf '%04x' $(($(cksum <<<"$name" | cut -d' ' -f1) % 65536)))"
   local args=()
   # Factory roles never push or touch PRs: agent-desk does that. Each rule twice, as the rtk hook rewrites
@@ -163,7 +239,10 @@ cmd_new() {
   local banned=() cmd
   for cmd in "git push" "gh pr create" "gh pr merge" "gh pr ready"; do banned+=("Bash($cmd *)" "Bash(rtk $cmd *)"); done
   [ -n "$role" ] && args=(-- --agent "$role" --permission-mode auto --disallowedTools "${banned[@]}")
-  herdr agent start "${name:-task}" --kind "$agent" --pane "$pane" ${args[@]+"${args[@]}"} >/dev/null || { say "agent did not start in $pane"; exit 1; }
+  herdr agent start "${name:-task}" --kind "$agent" --pane "$pane" ${args[@]+"${args[@]}"} >/dev/null || {
+    say "agent did not start in $pane"
+    exit 1
+  }
   # The brief goes inline: a file outside the worktree would cost the new session a permission prompt.
   local prompt="You are continuing task $branch in its own git worktree ($dst), handed off from another session."
   [ -n "$text" ] && prompt=$(printf '%s Handoff brief:\n\n%s' "$prompt" "$text")
@@ -172,38 +251,73 @@ cmd_new() {
 }
 
 cmd_fan() {
-  local spec=${1:?usage: wt fan <repo> <branch> -n N} branch=${2:?usage: wt fan <repo> <branch> -n N}; shift 2
+  local spec=${1:?usage: wt fan <repo> <branch> -n N} branch=${2:?usage: wt fan <repo> <branch> -n N}
+  shift 2
   local n="" agents="" brief="" a
   while [ $# -gt 0 ]; do
     case $1 in
-      -n) n=${2:?-n needs a number}; shift 2 ;;
-      --agent) agents=${2:?--agent needs claude, codex or a list like claude,codex}; shift 2 ;;
-      --brief) brief=${2:?--brief needs a file or -}; shift 2 ;;
-      *) say "unknown option $1"; exit 1 ;;
+      -n)
+        n=${2:?-n needs a number}
+        shift 2
+        ;;
+      --agent)
+        agents=${2:?--agent needs claude, codex or a list like claude,codex}
+        shift 2
+        ;;
+      --brief)
+        brief=${2:?--brief needs a file or -}
+        shift 2
+        ;;
+      *)
+        say "unknown option $1"
+        exit 1
+        ;;
     esac
   done
-  [[ $n =~ ^[0-9]+$ ]] && [ "$n" -ge 2 ] || { say "-n needs the number of worktrees, 2 or more"; exit 1; }
+  [[ $n =~ ^[0-9]+$ ]] && [ "$n" -ge 2 ] || {
+    say "-n needs the number of worktrees, 2 or more"
+    exit 1
+  }
   # Checked before the first worktree, so bad input leaves no partial fan behind.
-  local list=(); IFS=, read -ra list <<<"$agents"
+  local list=()
+  IFS=, read -ra list <<<"$agents"
   for a in ${list[@]+"${list[@]}"}; do
-    case $a in claude|codex) ;; *) say "unknown agent '$a': claude or codex"; exit 1 ;; esac
+    case $a in claude | codex) ;; *)
+      say "unknown agent '$a': claude or codex"
+      exit 1
+      ;;
+    esac
   done
   if [ -n "$agents" ]; then
-    [ "${HERDR_ENV:-}" = 1 ] || { say "--agent needs Herdr (HERDR_ENV=1)"; exit 1; }
+    [ "${HERDR_ENV:-}" = 1 ] || {
+      say "--agent needs Herdr (HERDR_ENV=1)"
+      exit 1
+    }
   fi
   local src
-  src=$(repo_dir "$spec") || { say "no repo '$spec': give its path (. inside it), a repo next to this one or <group>/<repo> under \$WT_ROOT"; exit 1; }
+  src=$(repo_dir "$spec") || {
+    say "no repo '$spec': give its path (. inside it), a repo next to this one or <group>/<repo> under \$WT_ROOT"
+    exit 1
+  }
   load_repo "$src"
-  local base; base=$(base_of "$src")
+  local base
+  base=$(base_of "$src")
   # Read stdin once: every worktree gets the same brief.
   local tmp=""
-  [ "$brief" = - ] && { tmp=$(mktemp); cat >"$tmp"; brief=$tmp; }
+  [ "$brief" = - ] && {
+    tmp=$(mktemp)
+    cat >"$tmp"
+    brief=$tmp
+  }
   local i args
   for ((i = 1; i <= n; i++)); do
     args=()
     [ -n "$agents" ] && args+=(--agent "${list[(i - 1) % ${#list[@]}]}")
     [ -n "$brief" ] && args+=(--brief "$brief")
-    (cmd_new "$spec" "$branch-$i" ${args[@]+"${args[@]}"}) || { [ -n "$tmp" ] && rm -f "$tmp"; exit 1; }
+    (cmd_new "$spec" "$branch-$i" ${args[@]+"${args[@]}"}) || {
+      [ -n "$tmp" ] && rm -f "$tmp"
+      exit 1
+    }
   done
   [ -n "$tmp" ] && rm -f "$tmp"
   {
@@ -218,7 +332,8 @@ cmd_fan() {
 # removed|skipped|kept <branch> <detail>: a line in `wt sync`, a desktop notification otherwise.
 report() {
   if [ "$SYNC" = 1 ]; then
-    local mark="•"; case $1 in removed) mark="✔" ;; skipped) mark="⚠" ;; esac
+    local mark="•"
+    case $1 in removed) mark="✔" ;; skipped) mark="⚠" ;; esac
     printf '  %s %-45s %s\n' "$mark" "$2" "$3"
   else
     case $1 in
@@ -234,17 +349,21 @@ clean_one() {
   local top branch main base
   top=$(git -C "$1" rev-parse --show-toplevel 2>/dev/null) && main=$(main_of "$top") || return 0
   load_repo "$main"
-  case $top in "$WT_DIR/$REPO"/*) ;; *) return 0 ;; esac        # only task worktrees
+  case $top in "$WT_DIR/$REPO"/*) ;; *) return 0 ;; esac # only task worktrees
   branch=$(git -C "$top" branch --show-current)
   # A detached HEAD hides which branch the work belongs to (and commits made there may be on no branch): say so.
-  [ -n "$branch" ] || { report kept "${top#"$WT_DIR"/}" "detached HEAD at $(git -C "$top" rev-parse --short HEAD), switch to its branch"; return 0; }
+  [ -n "$branch" ] || {
+    report kept "${top#"$WT_DIR"/}" "detached HEAD at $(git -C "$top" rev-parse --short HEAD), switch to its branch"
+    return 0
+  }
   base=$(base_of "$main")
   [ -n "$base" ] || return 0
 
   [ "$NO_FETCH" = 1 ] || maybe_timeout 20 git -C "$main" fetch --quiet --prune "$REMOTE" 2>/dev/null
   # A branch with no commits yet is also "contained" in the base; skip it.
   if [ "$(git -C "$main" reflog show --format=%H "refs/heads/$branch" -- | tail -1)" = "$(git -C "$main" rev-parse "refs/heads/$branch")" ]; then
-    report kept "$branch" "no commits yet"; return 0
+    report kept "$branch" "no commits yet"
+    return 0
   fi
   local merged=0
   git -C "$main" merge-base --is-ancestor "refs/heads/$branch" "$REMOTE/$base" && merged=1
@@ -263,7 +382,8 @@ clean_one() {
     return 0
   fi
   if [ -n "$(git -C "$top" status --porcelain)" ]; then
-    report skipped "$branch" "$top"; return 0
+    report skipped "$branch" "$top"
+    return 0
   fi
   local ws="" busy
   command -v herdr >/dev/null &&
@@ -274,23 +394,36 @@ clean_one() {
     busy=$(herdr agent list 2>/dev/null | jq -r --arg ws "$ws" --arg me "${HERDR_PANE_ID:-}" '[.result.agents[]? |
       select(.workspace_id == $ws and .pane_id != $me and .agent_status != "idle" and .agent_status != "done") |
       "agent \(.name // .agent) is \(.agent_status)"] | first // empty')
-    [ -n "$busy" ] && { report kept "$branch" "merged, $busy"; return 0; }
+    [ -n "$busy" ] && {
+      report kept "$branch" "merged, $busy"
+      return 0
+    }
   fi
-  [ "$DRY_RUN" = 1 ] && { report kept "$branch" "merged → would remove"; return 0; }
+  [ "$DRY_RUN" = 1 ] && {
+    report kept "$branch" "merged → would remove"
+    return 0
+  }
 
   # A branch like `fix/foo` leaves `<repo>/fix/` behind: remove such parents once empty, deepest first, but
   # never `<repo>` itself.
   local parents=() d
   d=$(dirname "$top")
-  while [[ $d == "$WT_DIR"/*/* ]]; do parents+=("$d"); d=$(dirname "$d"); done
+  while [[ $d == "$WT_DIR"/*/* ]]; do
+    parents+=("$d")
+    d=$(dirname "$d")
+  done
   if [ -n "$ws" ] && [ "$ws" = "${HERDR_WORKSPACE_ID:-}" ]; then
     # Detached and delayed: the caller (the SessionEnd hook) runs inside that workspace's own pane.
-    local detach=nohup; command -v setsid >/dev/null && detach=setsid
+    local detach=nohup
+    command -v setsid >/dev/null && detach=setsid
     $detach bash -c "sleep 2; herdr worktree remove --workspace '$ws' --force >/dev/null 2>&1 || git -C '$main' worktree remove --force '$top'; git -C '$main' branch -D '$branch' >/dev/null; rmdir $(printf '%q ' ${parents[@]+"${parents[@]}"}) 2>/dev/null; $(printf '%q' "$(abspath "$(dirname "$0")")/$(basename "$0")") close-main '$main'" </dev/null >/dev/null 2>&1 &
   else
     # -D: a squash-merged branch is not an ancestor, but the checks above showed it is merged.
     { [ -n "$ws" ] && herdr worktree remove --workspace "$ws" --force >/dev/null 2>&1; } || git -C "$main" worktree remove --force "$top" ||
-      { report kept "$branch" "merged, removing the worktree failed"; return 0; }
+      {
+        report kept "$branch" "merged, removing the worktree failed"
+        return 0
+      }
     git -C "$main" branch -D "$branch" >/dev/null
     [ ${#parents[@]} -gt 0 ] && rmdir "${parents[@]}" 2>/dev/null
     close_main_ws "$main"
@@ -323,7 +456,8 @@ worktrees() { find "$1/.worktrees" -maxdepth 8 -name .git -type f 2>/dev/null | 
 cmd_clean() {
   if [ "${1:-}" = --all ]; then
     projects "${2:-}"
-    local p d; for p in "${PROJECTS[@]}"; do while read -r d; do clean_one "$d"; done < <(worktrees "$p"); done
+    local p d
+    for p in "${PROJECTS[@]}"; do while read -r d; do clean_one "$d"; done < <(worktrees "$p"); done
   else
     clean_one "${1:-.}"
   fi
@@ -345,7 +479,8 @@ cmd_list() {
 # (a session in one repo may also have opened the task's worktree in another repo, where no session ends).
 cmd_hook() {
   local cwd top main rel own="" task="" wt_dir d
-  cwd=$(jq -r '.cwd // empty'); [ -n "$cwd" ] && [ -d "$cwd" ] || return 0
+  cwd=$(jq -r '.cwd // empty')
+  [ -n "$cwd" ] && [ -d "$cwd" ] || return 0
   # Read the task before clean_one removes the worktree.
   if top=$(git -C "$cwd" rev-parse --show-toplevel 2>/dev/null) && main=$(main_of "$top"); then
     load_repo "$main"
@@ -364,12 +499,13 @@ cmd_hook() {
 
 cmd_sync() {
   local only="" a
-  for a in "$@"; do case $a in --dry-run) DRY_RUN=1 ;; *) only=$a ;; esac; done
+  for a in "$@"; do case $a in --dry-run) DRY_RUN=1 ;; *) only=$a ;; esac done
   SYNC=1 NO_FETCH=1
   projects "$only"
   local p src base d
   for p in "${PROJECTS[@]}"; do for src in "$p"/*/; do
-    src=${src%/}; [ -d "$src/.git" ] || continue
+    src=${src%/}
+    [ -d "$src/.git" ] || continue
     load_repo "$src"
     # Only projects that use task worktrees.
     [ -d "$WT_DIR" ] || continue
@@ -379,15 +515,20 @@ cmd_sync() {
     # Fast-forward only; git refuses to move a branch that is checked out in some worktree.
     if [ "$(git -C "$src" branch --show-current)" = "$base" ]; then
       # The main checkout itself stands on the base branch: fast-forward it when clean.
-      if [ -n "$(git -C "$src" status --porcelain --untracked-files=no)" ]; then echo "  ! $REPO has uncommitted changes, $base not updated"
-      elif [ "$DRY_RUN" = 1 ]; then echo "  • would fast-forward $base"
-      elif git -C "$src" merge --ff-only --quiet "$REMOTE/$base" 2>/dev/null; then echo "  ✔ $base = $REMOTE/$base"
+      if [ -n "$(git -C "$src" status --porcelain --untracked-files=no)" ]; then
+        echo "  ! $REPO has uncommitted changes, $base not updated"
+      elif [ "$DRY_RUN" = 1 ]; then
+        echo "  • would fast-forward $base"
+      elif git -C "$src" merge --ff-only --quiet "$REMOTE/$base" 2>/dev/null; then
+        echo "  ✔ $base = $REMOTE/$base"
       else echo "  ! local $base has its own commits, left as is"; fi
     elif git -C "$src" worktree list --porcelain | grep -qx "branch refs/heads/$base"; then
       echo "  • local $base is checked out in a worktree, not updated"
     elif git -C "$src" show-ref -q --verify "refs/heads/$base"; then
-      if [ "$DRY_RUN" = 1 ]; then echo "  • would fast-forward local $base"
-      elif git -C "$src" fetch --quiet . "$REMOTE/$base:$base" 2>/dev/null; then echo "  ✔ local $base = $REMOTE/$base"
+      if [ "$DRY_RUN" = 1 ]; then
+        echo "  • would fast-forward local $base"
+      elif git -C "$src" fetch --quiet . "$REMOTE/$base:$base" 2>/dev/null; then
+        echo "  ✔ local $base = $REMOTE/$base"
       else echo "  ! local $base has its own commits, left as is"; fi
     fi
     [ "$DRY_RUN" = 1 ] || git -C "$src" worktree prune
@@ -397,12 +538,33 @@ cmd_sync() {
 }
 
 case ${1:-} in
-  sync)  shift; cmd_sync "$@" ;;
-  new)   shift; cmd_new "$@" ;;
-  fan)   shift; cmd_fan "$@" ;;
-  clean) shift; cmd_clean "$@" ;;
-  list)  shift; cmd_list "$@" ;;
-  hook)  cmd_hook; exit 0 ;;
-  close-main) close_main_ws "$2" ;;   # internal: the delayed Herdr removal calls it after the worktree is gone
-  *)     sed -n '2,35p' "$0"; [ $# -eq 0 ] ;;   # bare `wt` is help, not an error
+  sync)
+    shift
+    cmd_sync "$@"
+    ;;
+  new)
+    shift
+    cmd_new "$@"
+    ;;
+  fan)
+    shift
+    cmd_fan "$@"
+    ;;
+  clean)
+    shift
+    cmd_clean "$@"
+    ;;
+  list)
+    shift
+    cmd_list "$@"
+    ;;
+  hook)
+    cmd_hook
+    exit 0
+    ;;
+  close-main) close_main_ws "$2" ;; # internal: the delayed Herdr removal calls it after the worktree is gone
+  *)
+    sed -n '2,35p' "$0"
+    [ $# -eq 0 ]
+    ;; # bare `wt` is help, not an error
 esac

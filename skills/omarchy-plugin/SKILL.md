@@ -35,15 +35,19 @@ shell disagree, the shell wins: read the source under
    `~/.config/omarchy/plugins/<id>/`. `omarchy plugin validate` rejects
    symlinks, and the file watcher that hot-reloads plugins does not follow them.
 4. **Validate, load, enable:**
+
    ```bash
    omarchy plugin validate ~/.config/omarchy/plugins/<id>   # silent, exit 0 when valid
    omarchy-shell shell rescanPlugins          # the new id must be known first
    omarchy plugin enable <id> right           # or: left, center, --after omarchy.clock
    ```
+
 5. **Watch the log** while you work. Saving a file reloads plugin code.
+
    ```bash
    qs log -p /usr/share/omarchy/shell -f | grep -iE "<id>|PluginRegistry|failed"
    ```
+
    `qmllint` works on a copy anywhere, but flags the shell's `qs.*` imports
    and `onExited` types as unknown: ignore those.
    A rejected manifest is only a `PluginRegistry:` warning there; the plugin
@@ -154,6 +158,7 @@ destroyed at any time. A service is created once for the whole shell.
   rejected that workaround. Copy `template/LineEdit.qml` next to your QML and
   use it instead: a one-line editor on key events that pastes only on Ctrl+V,
   through `wl-paste` in its own process with a timeout and a size cap.
+
   ```qml
   LineEdit {
     id: input
@@ -164,6 +169,7 @@ destroyed at any time. A service is created once for the whole shell.
     onCanceled: root.close()
   }
   ```
+
 - **Keyboard:** `KeyboardPanel` needs a `focusTarget`. `PanelKeyCatcher`
   sees keys before children, so set `blocked: input.activeFocus` while an
   inline `LineEdit` is focused, or h/j/k/l, x and Enter never reach it.
