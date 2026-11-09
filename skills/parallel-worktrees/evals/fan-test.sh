@@ -3,10 +3,15 @@
 # brief to each, the compare commands in the output; bad input creates nothing. Run: bash evals/fan-test.sh
 set -euo pipefail
 here=$(dirname "$(realpath "$0")")
-S=$(mktemp -d); trap 'rm -rf "$S"' EXIT
+S=$(mktemp -d)
+trap 'rm -rf "$S"' EXIT
 "$here/sandbox.sh" setup "$S" 0 >/dev/null
-. "$S/env.sh"; export HERDR_ENV=1
-fail() { echo "FAIL: $*"; exit 1; }
+. "$S/env.sh"
+export HERDR_ENV=1
+fail() {
+  echo "FAIL: $*"
+  exit 1
+}
 W=$WT_ROOT/acme/.worktrees/api
 
 out=$(echo "rename login to signIn" | wt fan acme/api feat/x -n 3 --agent claude,codex --brief - 2>"$S/err")

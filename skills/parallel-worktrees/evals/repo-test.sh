@@ -4,10 +4,15 @@
 # hook removing the task's merged worktrees in both repos. Run: bash evals/repo-test.sh
 set -euo pipefail
 here=$(dirname "$(realpath "$0")")
-S=$(mktemp -d); trap 'rm -rf "$S"' EXIT
+S=$(mktemp -d)
+trap 'rm -rf "$S"' EXIT
 app=$("$here/sandbox.sh" setup "$S" 6)
-. "$S/env.sh"; unset WT_ROOT HERDR_ENV
-fail() { echo "FAIL: $*"; exit 1; }
+. "$S/env.sh"
+unset WT_ROOT HERDR_ENV
+fail() {
+  echo "FAIL: $*"
+  exit 1
+}
 W=$(dirname "$app")/.worktrees
 git_() { git -c user.name=Test -c user.email=test@example.com "$@"; }
 
@@ -24,7 +29,10 @@ cd "$W/app/SHOP-7.cart"
 
 for r in app:develop lib:stable; do
   d=$W/${r%%:*}/SHOP-7.cart
-  echo cart > "$d/cart.txt"; git_ -C "$d" add -A; git_ -C "$d" commit -qm cart; git_ -C "$d" push -q origin "HEAD:${r#*:}"
+  echo cart >"$d/cart.txt"
+  git_ -C "$d" add -A
+  git_ -C "$d" commit -qm cart
+  git_ -C "$d" push -q origin "HEAD:${r#*:}"
 done
 echo '{"cwd":"'"$W/app/SHOP-7.cart"'"}' | (cd / && wt hook) 2>/dev/null
 [ ! -e "$W/app/SHOP-7.cart" ] || fail "hook kept the merged app worktree"

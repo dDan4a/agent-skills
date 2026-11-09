@@ -3,10 +3,15 @@
 # ban, and nothing extra without --role. Run: bash evals/role-test.sh
 set -euo pipefail
 here=$(dirname "$(realpath "$0")")
-S=$(mktemp -d); trap 'rm -rf "$S"' EXIT
+S=$(mktemp -d)
+trap 'rm -rf "$S"' EXIT
 "$here/sandbox.sh" setup "$S" 0 >/dev/null
-. "$S/env.sh"; export HERDR_ENV=1
-fail() { echo "FAIL: $*"; exit 1; }
+. "$S/env.sh"
+export HERDR_ENV=1
+fail() {
+  echo "FAIL: $*"
+  exit 1
+}
 start() { grep '^herdr agent start' "$S/herdr.log" | tail -1; }
 
 wt new acme/api feat/plain --agent claude </dev/null >/dev/null 2>&1

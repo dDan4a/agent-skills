@@ -8,20 +8,32 @@ cmd=$1 S=$(realpath -m "$2") id=${3:-}
 R=$S/jsonslim
 
 if [ "$cmd" = state ]; then
-  echo "== gh calls"; cat "$S/gh.log" 2>/dev/null || echo none
-  echo "== git status"; git -C "$R" status --short
-  echo "== new or changed files"; git -C "$R" status --short --untracked-files=all | awk '{print $2}' | while read -r f; do
-    case $f in *.svg) echo "-- $f (first 15 lines)"; head -15 "$R/$f" ;; *.md|*.py|*.sh) echo "-- $f"; cat "$R/$f" ;; *) echo "-- $f" ;; esac
+  echo "== gh calls"
+  cat "$S/gh.log" 2>/dev/null || echo none
+  echo "== git status"
+  git -C "$R" status --short
+  echo "== new or changed files"
+  git -C "$R" status --short --untracked-files=all | awk '{print $2}' | while read -r f; do
+    case $f in *.svg)
+      echo "-- $f (first 15 lines)"
+      head -15 "$R/$f"
+      ;;
+    *.md | *.py | *.sh)
+      echo "-- $f"
+      cat "$R/$f"
+      ;;
+    *) echo "-- $f" ;; esac
   done
-  echo "== README.md before"; git -C "$R" show HEAD:README.md
+  echo "== README.md before"
+  git -C "$R" show HEAD:README.md
   exit 0
 fi
 
 mkdir -p "$S/bin" "$R/docs" "$R/bench" "$R/.github/workflows" "$R/cmd/jsonslim"
-cat > "$S/env.sh" <<ENV
+cat >"$S/env.sh" <<ENV
 export PATH=$S/bin:\$PATH
 ENV
-cat > "$S/bin/gh" <<STUB
+cat >"$S/bin/gh" <<STUB
 #!/usr/bin/env bash
 printf 'gh' >> "$S/gh.log"; printf ' %q' "\$@" >> "$S/gh.log"; echo >> "$S/gh.log"
 echo "To get started with GitHub CLI, please run:  gh auth login" >&2; exit 4
@@ -29,7 +41,7 @@ STUB
 chmod +x "$S/bin/gh"
 
 cd "$R"
-cat > README.md <<'MD'
+cat >README.md <<'MD'
 # jsonslim
 
 jsonslim minifies and filters JSON from the command line. It is a single static binary, streams input so it works on files bigger than memory, and is faster than jq for plain minification.
@@ -71,17 +83,17 @@ Run `go test ./...` before sending a PR. Issues and PRs welcome.
 
 MIT
 MD
-cat > bench/results.csv <<'CSV'
+cat >bench/results.csv <<'CSV'
 tool,seconds,peak_mb
 jsonslim,2.1,6
 jq,6.8,1890
 python json.tool,14.2,3120
 node JSON.stringify,4.9,2410
 CSV
-printf 'MIT License\n\nCopyright (c) 2026 acme\n' > LICENSE
-printf 'module github.com/acme/jsonslim\n\ngo 1.23\n' > go.mod
-printf 'package main\n\nfunc main() {}\n' > cmd/jsonslim/main.go
-cat > .github/workflows/ci.yml <<'YML'
+printf 'MIT License\n\nCopyright (c) 2026 acme\n' >LICENSE
+printf 'module github.com/acme/jsonslim\n\ngo 1.23\n' >go.mod
+printf 'package main\n\nfunc main() {}\n' >cmd/jsonslim/main.go
+cat >.github/workflows/ci.yml <<'YML'
 name: CI
 on: [push, pull_request]
 jobs:
@@ -96,7 +108,7 @@ YML
 python3 -c 'import struct,zlib,sys
 w,h=960,540; c=lambda t,d: struct.pack(">I",len(d))+t+d+struct.pack(">I",zlib.crc32(t+d))
 raw=b"".join(b"\0"+b"\x1e\x1e\x2e"*w for _ in range(h))
-sys.stdout.buffer.write(b"\x89PNG\r\n\x1a\n"+c(b"IHDR",struct.pack(">IIBBBBB",w,h,8,2,0,0,0))+c(b"IDAT",zlib.compress(raw))+c(b"IEND",b""))' > docs/demo.png
+sys.stdout.buffer.write(b"\x89PNG\r\n\x1a\n"+c(b"IHDR",struct.pack(">IIBBBBB",w,h,8,2,0,0,0))+c(b"IDAT",zlib.compress(raw))+c(b"IEND",b""))' >docs/demo.png
 git init -q -b main && git remote add origin https://github.com/acme/jsonslim.git
 git add -A && git -c user.name=acme -c user.email=dev@acme.test commit -qm init
 echo "$R"

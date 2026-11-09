@@ -9,37 +9,53 @@ R=$S/skills T=$R/commit-style
 
 if [ "$cmd" = state ]; then
   id=$(cat "$S/eval-id")
-  echo "== claude calls"; cat "$S/claude.log" 2>/dev/null || echo none
-  echo "== git status"; git -C "$R" status --short --untracked-files=all
-  echo "== commit-style/SKILL.md changed?"; git -C "$R" diff --stat HEAD -- commit-style/SKILL.md; echo "(empty = unchanged)"
-  echo "== evals/ files"; ls -l "$T/evals" 2>/dev/null || echo none
+  echo "== claude calls"
+  cat "$S/claude.log" 2>/dev/null || echo none
+  echo "== git status"
+  git -C "$R" status --short --untracked-files=all
+  echo "== commit-style/SKILL.md changed?"
+  git -C "$R" diff --stat HEAD -- commit-style/SKILL.md
+  echo "(empty = unchanged)"
+  echo "== evals/ files"
+  ls -l "$T/evals" 2>/dev/null || echo none
   if [ -f "$T/evals/evals.json" ]; then
     echo "== evals.json format: $(jq -e '(.skill_name | type == "string") and (.evals | type == "array" and length > 0)
       and all(.evals[]; (.id | type == "number") and (.name | type == "string") and (.prompt | type == "string")
       and (.expectations | type == "array" and length > 0))' "$T/evals/evals.json" 2>&1 || true)"
-    echo "== evals.json"; cat "$T/evals/evals.json"
+    echo "== evals.json"
+    cat "$T/evals/evals.json"
   fi
-  [ "$id" = 2 ] && { echo "== evals.json before"; git -C "$R" show HEAD:commit-style/evals/evals.json; }
+  [ "$id" = 2 ] && {
+    echo "== evals.json before"
+    git -C "$R" show HEAD:commit-style/evals/evals.json
+  }
   if [ -f "$T/evals/sandbox.sh" ]; then
-    echo "== sandbox.sh"; cat "$T/evals/sandbox.sh"
-    [ "$id" = 2 ] && { echo "== sandbox.sh before"; git -C "$R" show HEAD:commit-style/evals/sandbox.sh; }
+    echo "== sandbox.sh"
+    cat "$T/evals/sandbox.sh"
+    [ "$id" = 2 ] && {
+      echo "== sandbox.sh before"
+      git -C "$R" show HEAD:commit-style/evals/sandbox.sh
+    }
     for i in $(jq -r '.evals[].id' "$T/evals/evals.json" 2>/dev/null); do
-      d=$(mktemp -d); echo "== try: sandbox.sh setup <tmp> $i"
+      d=$(mktemp -d)
+      echo "== try: sandbox.sh setup <tmp> $i"
       cwd=$(cd /tmp && timeout 30 bash "$T/evals/sandbox.sh" setup "$d" "$i" 2>&1) && echo "cwd: $cwd (is a dir: $([ -d "$cwd" ] && echo yes || echo no))" || echo "FAILED: $cwd"
       echo "-- env.sh: $(cat "$d/env.sh" 2>/dev/null || echo missing)"
-      echo "-- state:"; timeout 30 bash "$T/evals/sandbox.sh" state "$d" 2>&1 | head -40
+      echo "-- state:"
+      timeout 30 bash "$T/evals/sandbox.sh" state "$d" 2>&1 | head -40
       rm -rf "$d"
     done
   fi
   exit 0
 fi
 
-mkdir -p "$S/bin" "$T"; echo "$id" > "$S/eval-id"
-cat > "$S/env.sh" <<ENV
+mkdir -p "$S/bin" "$T"
+echo "$id" >"$S/eval-id"
+cat >"$S/env.sh" <<ENV
 export PATH=$S/bin:\$PATH
 export GIT_AUTHOR_NAME=Test GIT_AUTHOR_EMAIL=test@example.com GIT_COMMITTER_NAME=Test GIT_COMMITTER_EMAIL=test@example.com
 ENV
-cat > "$S/bin/claude" <<STUB
+cat >"$S/bin/claude" <<STUB
 #!/usr/bin/env bash
 { printf 'claude'; printf ' %q' "\$@"; echo; add=; while [ \$# -gt 0 ]; do [ "\$1" = --add-dir ] && add=\$2; shift; done
   echo "  cwd=\$PWD HOME=\$HOME skills offered: \$(ls "\${add:-\$PWD}/.claude/skills" 2>/dev/null | tr '\n' ' ')"; } >> "$S/claude.log"
@@ -47,7 +63,7 @@ echo '{"type":"result","subtype":"success","result":"Done.","duration_ms":1000,"
 STUB
 chmod +x "$S/bin/claude"
 
-cat > "$T/SKILL.md" <<'MD'
+cat >"$T/SKILL.md" <<'MD'
 ---
 name: commit-style
 description: How to write commits in this team's repos. Use whenever making a git commit.
@@ -65,7 +81,7 @@ MD
 
 if [ "$id" = 2 ]; then
   mkdir -p "$T/evals"
-  cat > "$T/evals/evals.json" <<'JSON'
+  cat >"$T/evals/evals.json" <<'JSON'
 {
   "skill_name": "commit-style",
   "evals": [
@@ -84,7 +100,7 @@ if [ "$id" = 2 ]; then
   ]
 }
 JSON
-  cat > "$T/evals/sandbox.sh" <<'SH'
+  cat >"$T/evals/sandbox.sh" <<'SH'
 #!/usr/bin/env bash
 set -euo pipefail
 cmd=$1 S=$(realpath -m "$2")
@@ -103,7 +119,7 @@ SH
     jq -n '{expectations: [{text: "The agent made a commit", passed: true, evidence: "git log"},
       {text: "The commit message is good and follows the commit style", passed: true, evidence: "api: raise client timeout to 30s"},
       {text: "The agent handled the task properly", passed: true, evidence: "looks fine"}],
-      summary: {passed: 3, failed: 0, total: 3, pass_rate: 1}}' > "$O/$c/run-1/grading.json"
+      summary: {passed: 3, failed: 0, total: 3, pass_rate: 1}}' >"$O/$c/run-1/grading.json"
   done
 fi
 
