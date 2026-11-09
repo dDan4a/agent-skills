@@ -152,9 +152,11 @@ cmd_new() {
   local text=""
   if [ "$brief" = - ]; then text=$(cat); elif [ -n "$brief" ]; then text=$(cat "$brief"); fi
 
-  # Herdr agent names: lowercase letters, digits, '-', '_', starting with a letter, max 32.
+  # Herdr agent names: lowercase letters, digits, '-', '_', starting with a letter, max 32, unique. The repo tells the same
+  # branch in two repos apart; a long name ends in a hash of the whole, as its cut tail may be what tells it apart.
   local name
-  name=$(tr 'A-Z' 'a-z' <<<"$branch" | sed 's/[^a-z0-9_-]/-/g; s/^[^a-z]*//' | cut -c1-32)
+  name=$(tr 'A-Z' 'a-z' <<<"$REPO-$branch" | sed 's/[^a-z0-9_-]/-/g; s/^[^a-z]*//')
+  [ ${#name} -le 32 ] || name="$(cut -c1-27 <<<"$name" | sed 's/-*$//')-$(printf '%04x' $(($(cksum <<<"$name" | cut -d' ' -f1) % 65536)))"
   local args=()
   # Factory roles never push or touch PRs: agent-desk does that. Each rule twice, as the rtk hook rewrites
   # `git push` to `rtk git push` before the permission check and a plain rule does not match it.
@@ -188,8 +190,6 @@ cmd_fan() {
   done
   if [ -n "$agents" ]; then
     [ "${HERDR_ENV:-}" = 1 ] || { say "--agent needs Herdr (HERDR_ENV=1)"; exit 1; }
-    # Herdr cuts agent names at 32 characters, which would cut off the -N that tells them apart.
-    [ $((${#branch} + 1 + ${#n})) -le 32 ] || { say "branch name too long for Herdr agent names: keep '$branch-$n' within 32"; exit 1; }
   fi
   local src
   src=$(repo_dir "$spec") || { say "no repo '$spec': give its path (. inside it), a repo next to this one or <group>/<repo> under \$WT_ROOT"; exit 1; }
