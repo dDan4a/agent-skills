@@ -11,8 +11,11 @@ expect() { # expect <exit code> <case name> <command...>
   shift 2
   out=$("$@" 2>&1)
   got=$?
-  if [ "$got" = "$want" ]; then echo "ok   $name"; else
+  if [ "$got" = "$want" ]; then
+    echo "ok   $name"
+  else
     echo "FAIL $name: exit $got, want $want"
+    # shellcheck disable=SC2001 # indents every line of a multi-line output
     sed 's/^/     /' <<<"$out"
     failed=1
   fi
@@ -23,6 +26,7 @@ skill() { # skill <repo> <name> <frontmatter lines> [body]
   printf -- '---\n%s\n---\n\n%s\n' "$3" "${4:-Body.}" >"$1/skills/$2/SKILL.md"
 }
 
+# shellcheck disable=SC2016 # backticks are Markdown here
 good() {
   skill "$1" good 'name: good
 description: Use when testing the checks.' 'See [setup](references/setup.md#top), `scripts/run`, https://example.com and [web](https://example.com).'
@@ -56,6 +60,7 @@ description: Use when testing.' 'Read [this](references/missing.md).'
 expect 1 "check-skills: broken relative link" "$here/check-skills" "$r"
 
 r=$T/path
+# shellcheck disable=SC2016
 skill "$r" path 'name: path
 description: Use when testing.' 'Run `scripts/missing.sh` first.'
 expect 1 "check-skills: missing scripts/ path" "$here/check-skills" "$r"
@@ -76,6 +81,7 @@ g init -q -b main
 g add -A
 g commit -qm base
 g tag base
+# shellcheck disable=SC2329 # called through expect
 vb() { (cd "$r" && "$here/check-version-bump" base); }
 
 echo x >"$r/other/file"

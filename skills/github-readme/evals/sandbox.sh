@@ -4,7 +4,7 @@
 #   sandbox.sh setup <dir> <eval-id>   build the sandbox, print the session's cwd
 #   sandbox.sh state <dir>             dump what the grader needs
 set -euo pipefail
-cmd=$1 S=$(realpath -m "$2") id=${3:-}
+cmd=$1 S=$(realpath -m "$2")
 R=$S/jsonslim
 
 if [ "$cmd" = state ]; then

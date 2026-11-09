@@ -48,10 +48,14 @@ notify() {
 }
 abspath() { (cd "$1" 2>/dev/null && pwd -P); }
 # GNU timeout where there is one (stock macOS has none).
-maybe_timeout() { if command -v timeout >/dev/null; then timeout "$@"; else
-  shift
-  "$@"
-fi; }
+maybe_timeout() {
+  if command -v timeout >/dev/null; then
+    timeout "$@"
+  else
+    shift
+    "$@"
+  fi
+}
 
 ROOT=""
 [ -n "${WT_ROOT:-}" ] && ROOT=$(abspath "$WT_ROOT")
@@ -68,7 +72,9 @@ load_repo() {
   REPO=$(basename "$1") WT_DIR="$(dirname "$1")/.worktrees"
   BASE="" REMOTE=origin INTEGRATION="" TASK_RE=""
   link_local_files() { :; }
+  # shellcheck source=/dev/null
   [ -f "$(dirname "$1")/.wt.conf" ] && . "$(dirname "$1")/.wt.conf"
+  # shellcheck source=/dev/null
   [ -f "$1/.wt.conf" ] && . "$1/.wt.conf"
   return 0
 }
@@ -224,7 +230,7 @@ cmd_new() {
 
   # Herdr agent names: lowercase letters, digits, '-', '_', starting with a letter, max 32.
   local name
-  name=$(tr 'A-Z' 'a-z' <<<"$branch" | sed 's/[^a-z0-9_-]/-/g; s/^[^a-z]*//' | cut -c1-32)
+  name=$(tr '[:upper:]' '[:lower:]' <<<"$branch" | sed 's/[^a-z0-9_-]/-/g; s/^[^a-z]*//' | cut -c1-32)
   local args=()
   # Factory roles never push or touch PRs: agent-desk does that. Each rule twice, as the rtk hook rewrites
   # `git push` to `rtk git push` before the permission check and a plain rule does not match it.

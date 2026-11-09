@@ -7,6 +7,7 @@ here=$(dirname "$(realpath "$0")")
 S=$(mktemp -d)
 trap 'rm -rf "$S"' EXIT
 app=$("$here/sandbox.sh" setup "$S" 6)
+# shellcheck source=/dev/null
 . "$S/env.sh"
 unset WT_ROOT HERDR_ENV
 fail() {

@@ -6,6 +6,7 @@ here=$(dirname "$(realpath "$0")")
 S=$(mktemp -d)
 trap 'rm -rf "$S"' EXIT
 "$here/sandbox.sh" setup "$S" 0 >/dev/null
+# shellcheck source=/dev/null
 . "$S/env.sh"
 export HERDR_ENV=1
 fail() {
@@ -29,7 +30,7 @@ for bad in "-n 1" "-n x" "-n 2 --agent claude,gpt" "-n 2 --agent claude --nope";
 done
 wt fan acme/api feat/a-branch-name-too-long-for-herdr -n 2 --agent claude </dev/null >/dev/null 2>&1 && fail "accepted a long name"
 env -u HERDR_ENV wt fan acme/api feat/bad -n 2 --agent claude </dev/null >/dev/null 2>&1 && fail "accepted --agent without Herdr"
-[ -z "$(ls "$W/feat" | grep -v '^x-')" ] || fail "bad input created worktrees: $(ls "$W/feat")"
+[ -z "$(find "$W/feat" -mindepth 1 -maxdepth 1 ! -name 'x-*')" ] || fail "bad input created worktrees: $(ls "$W/feat")"
 
 out=$(env -u HERDR_ENV wt fan acme/api feat/plain -n 2 2>/dev/null)
 [ "$out" = "$(printf '%s\n' "$W/feat/plain-1" "$W/feat/plain-2")" ] || fail "without --agent: $out"

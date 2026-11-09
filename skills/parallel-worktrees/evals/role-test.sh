@@ -6,6 +6,7 @@ here=$(dirname "$(realpath "$0")")
 S=$(mktemp -d)
 trap 'rm -rf "$S"' EXIT
 "$here/sandbox.sh" setup "$S" 0 >/dev/null
+# shellcheck source=/dev/null
 . "$S/env.sh"
 export HERDR_ENV=1
 fail() {
