@@ -1,0 +1,41 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  shell:
+    uses: dDan4a/ci/.github/workflows/shell-lint.yml@v1
+  markdown:
+    uses: dDan4a/ci/.github/workflows/markdownlint.yml@v1
+  qml:
+    uses: dDan4a/ci/.github/workflows/qml-lint.yml@v1
+  ruff:
+    uses: dDan4a/ci/.github/workflows/python-ruff.yml@v1
+  actionlint:
+    uses: dDan4a/ci/.github/workflows/actionlint.yml@v1
+  zizmor:
+    uses: dDan4a/ci/.github/workflows/zizmor.yml@v1
+  gitleaks:
+    uses: dDan4a/ci/.github/workflows/gitleaks.yml@v1
+  typos:
+    uses: dDan4a/ci/.github/workflows/typos.yml@v1
+  checks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+      - run: scripts/test-checks
+      - run: scripts/check-skills
+      - name: check-version-bump
+        if: github.event_name == 'pull_request'
+        env:
+          BASE_REF: ${{ github.base_ref }}
+        run: scripts/check-version-bump "origin/$BASE_REF"
