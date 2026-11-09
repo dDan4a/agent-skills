@@ -12,7 +12,7 @@ W=$WT_ROOT/acme/.worktrees/api
 out=$(echo "rename login to signIn" | wt fan acme/api feat/x -n 3 --agent claude,codex --brief - 2>"$S/err")
 [ "$out" = "$(printf '%s\n' "$W/feat/x-1" "$W/feat/x-2" "$W/feat/x-3")" ] || fail "paths: $out"
 starts=$(grep '^herdr agent start' "$S/herdr.log" | awk '{print $4, $6}' | tr '\n' ' ')
-[ "$starts" = "feat-x-1 claude feat-x-2 codex feat-x-3 claude " ] || fail "agents not in turn: $starts"
+[ "$starts" = "api-feat-x-1 claude api-feat-x-2 codex api-feat-x-3 claude " ] || fail "agents not in turn: $starts"
 [ "$(grep -c 'rename login to signIn' "$S/herdr.log")" = 3 ] || fail "brief not sent to every agent: $(cat "$S/herdr.log")"
 for i in 1 2 3; do
   grep -qF "git -C $WT_ROOT/acme/api diff origin/main...feat/x-$i" "$S/err" || fail "no diff command for x-$i: $(cat "$S/err")"
@@ -22,9 +22,13 @@ for bad in "-n 1" "-n x" "-n 2 --agent claude,gpt" "-n 2 --agent claude --nope";
   # shellcheck disable=SC2086
   wt fan acme/api feat/bad $bad </dev/null >/dev/null 2>&1 && fail "accepted: $bad"
 done
-wt fan acme/api feat/a-branch-name-too-long-for-herdr -n 2 --agent claude </dev/null >/dev/null 2>&1 && fail "accepted a long name"
+wt fan acme/api feat/a-branch-name-too-long-for-herdr -n 2 --agent claude </dev/null >/dev/null 2>&1 || fail "rejected a long name"
+long=$(grep '^herdr agent start' "$S/herdr.log" | awk '{print $4}' | tail -2)
+[ "$(sort -u <<<"$long" | wc -l)" = 2 ] && ! grep -qE '.{33}' <<<"$long" || fail "long names collide or exceed 32: $long"
+wt new acme/web feat/x-1 --agent claude </dev/null >/dev/null 2>&1 || fail "same branch in another repo"
+grep -q '^herdr agent start web-feat-x-1 ' "$S/herdr.log" || fail "same branch in another repo: $(tail -1 "$S/herdr.log")"
 env -u HERDR_ENV wt fan acme/api feat/bad -n 2 --agent claude </dev/null >/dev/null 2>&1 && fail "accepted --agent without Herdr"
-[ -z "$(ls "$W/feat" | grep -v '^x-')" ] || fail "bad input created worktrees: $(ls "$W/feat")"
+[ -z "$(ls "$W/feat" | grep -v '^x-\|^a-branch')" ] || fail "bad input created worktrees: $(ls "$W/feat")"
 
 out=$(env -u HERDR_ENV wt fan acme/api feat/plain -n 2 2>/dev/null)
 [ "$out" = "$(printf '%s\n' "$W/feat/plain-1" "$W/feat/plain-2")" ] || fail "without --agent: $out"

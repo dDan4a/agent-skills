@@ -30,5 +30,5 @@ export WT_AFTER_CREATE='exit 3'
 out=$(wt new "$app" feat/bad --agent claude </dev/null 2>"$S/err") || fail "a failing hook stopped wt"
 [ "$out" = "$W/feat/bad" ] || fail "failing hook, stdout: $out"
 grep -q 'WT_AFTER_CREATE failed with code 3' "$S/err" || fail "no warning: $(cat "$S/err")"
-grep -q 'agent start feat-bad' "$S/herdr.log" || fail "a failing hook stopped the agent"
+grep -q 'agent start app-feat-bad' "$S/herdr.log" || fail "a failing hook stopped the agent"
 echo ok
