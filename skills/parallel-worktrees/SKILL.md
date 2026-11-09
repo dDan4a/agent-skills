@@ -13,7 +13,7 @@ exactly one session works there.
 
 ## Layout
 
-```
+```text
 <project>/                      # any folder; one per client or kind of work
   .wt.conf                      # optional local settings for all its repos (bash, not in git), see references/setup.md
   <repo>/                       # main checkout, stays on the default branch

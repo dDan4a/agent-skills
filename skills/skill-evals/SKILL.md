@@ -25,7 +25,7 @@ knows; a quick read-through does more there.
 
 Evals live inside the skill, so they ship with it (a few KB):
 
-```
+```text
 <skill>/
   SKILL.md
   evals/
@@ -86,7 +86,7 @@ the check accepts both; a check stricter than the skill fails good runs.
 
 One script, two commands. The runner calls it for every run:
 
-```
+```text
 sandbox.sh setup <dir> <eval-id>   build the world in <dir>, write <dir>/env.sh, print the session's cwd
 sandbox.sh state <dir>             print everything the grader needs about the end state
 ```

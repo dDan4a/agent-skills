@@ -27,7 +27,7 @@ submitting, since the rules change.
    Submission checklist. Unused fields: `_No response_`. Title:
    `[Plugin]: <name>`. The checklist, all five checked, verbatim:
 
-   ```
+   ```markdown
    - [x] The repository is public and contains installation and removal instructions.
    - [x] I have documented the plugin license and any external dependencies.
    - [x] I confirm that I own or have permission to submit this plugin and its preview assets.
