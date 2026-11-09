@@ -37,7 +37,7 @@ with a service.
 ## Bar side
 
 | Component | Use |
-|---|---|
+| --- | --- |
 | `BarWidget` | Root of a widget. `bar`, `moduleName`, `settings`, `setting(k, fallback)`, `broadcast(method)`, `vertical`, `barSize`. |
 | `WidgetButton` | Text button in the bar. `bar`, `text`, `active` (panel open), `dimmed`, `foreground`, `tooltipText`, signals `pressed(button)`, `wheelMoved(delta)`. Registers as a click target, so clicks reach it while another panel is open. |
 | `BarIconButton` | One glyph, optically centred. `iconComponent`, `slotSize`. |
@@ -46,7 +46,7 @@ with a service.
 ## Panel side
 
 | Component | Use |
-|---|---|
+| --- | --- |
 | `Panel` | Root of a popup. `open()`, `close()`, `toggle()`, `opened`, `controller.show()/hide()`, `switchPanel(dir)`, `ipcTarget`, `manageIpc`. |
 | `KeyboardPanel` | The popup window. Required: `anchorItem`, `bar`. Set `owner`, `open`, `focusTarget`, `contentWidth: fittedContentWidth(w)`, `contentHeight: fittedContentHeight(h)` (both clamp to the screen). Handles click-outside, fades, one popout per bar, dismiss surfaces on other monitors. |
 | `PopupCard` | Older popup; does not take keyboard focus from a hotkey. Prefer `KeyboardPanel`. |

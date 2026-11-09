@@ -30,7 +30,7 @@ line replaced by "end with a 2–3 line summary prefixed with `[<label>]`").
 Pick the place per idea, before opening anything:
 
 | The idea | Place | Opened with |
-|---|---|---|
+| --- | --- | --- |
 | A code task in a repo | a new worktree with its own workspace | `wt new <repo> <branch> --agent claude --brief -` (parallel-worktrees) |
 | A question about a repo, no changes | the repo's main checkout, in its own workspace | `herdr workspace create` |
 | Work in another project folder without git | that folder, in its own workspace | `herdr workspace create` |
@@ -45,7 +45,7 @@ files.
 Label: `<emoji> <topic>`.
 
 | Emoji | Kind of work |
-|---|---|
+| --- | --- |
 | 💡 | idea, discussion, design: the outcome is a decision or a plan |
 | 🔧 | task: the outcome is a change (files, config, a PR) |
 | 🔍 | research: the outcome is an answer or a summary |

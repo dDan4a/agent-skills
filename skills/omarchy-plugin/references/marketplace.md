@@ -26,6 +26,7 @@ submitting, since the rules change.
    slash), Category, Tags, Suggest a missing tag, Maintainer notes,
    Submission checklist. Unused fields: `_No response_`. Title:
    `[Plugin]: <name>`. The checklist, all five checked, verbatim:
+
    ```
    - [x] The repository is public and contains installation and removal instructions.
    - [x] I have documented the plugin license and any external dependencies.
@@ -33,6 +34,7 @@ submitting, since the rules change.
    - [x] The plugin does not overwrite user configuration without explicit consent.
    - [x] I understand that approval is for listing and is not a security review.
    ```
+
 2. Category, one of: Appearance, Desktop, Developer Tools, Hardware, Kids,
    Productivity, System, Widgets, Other.
 3. Tags, 1 to 3 of: AI, Bar, Education, Games, Hyprland, Kids, Launcher,
@@ -59,7 +61,7 @@ and every entry point. It skips `docs/`, `test(s)/`, `.github/` and `*.md`
 other than the root README.
 
 | Capability | Triggered by (anywhere scanned, README included) |
-|---|---|
+| --- | --- |
 | `package-manager` | `pacman -S`, `yay -S`, `omarchy pkg add`, `pip install`, `npm install`, `go install`, `cargo install`, ... |
 | `privilege` | `sudo`, `pkexec` (except clearly negated text like "no sudo is required") |
 | `service-management` | `systemctl`, `systemd-run`, `*.service` files |
@@ -69,6 +71,7 @@ other than the root README.
 | `bundled-executable-binary` | a committed executable ELF/PE/Mach-O |
 
 Outcomes:
+
 - `passed`: no capabilities. Verified automatically.
 - `review-required`: capabilities, no findings. Gets `security-review-required`
   and waits for a maintainer to accept the exact capability set. Common and
@@ -114,7 +117,7 @@ installs, including your own: see "Companion CLI" in `SKILL.md`.
 ## Labels
 
 | Label | Meaning |
-|---|---|
+| --- | --- |
 | `submission` | A submission issue. |
 | `validated` | Structure and manifest passed at the commit shown. |
 | `needs-fixes` | Blocks publication until a new commit fixes it. |
